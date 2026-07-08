@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0b2545">
+<title>Boîte à mots — Psy0</title>
+<style>
+:root{
+  --bg:#0b2545; --bg2:#13315c; --card:#ffffff; --ink:#132437; --muted:#5b7089;
+  --accent:#1d6fd8; --accent2:#0fa36b; --gold:#e8a33d; --danger:#c94f4f;
+  --radius:18px;
+  --sat:env(safe-area-inset-top,0px); --sab:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;height:100%;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background:linear-gradient(160deg,var(--bg) 0%,var(--bg2) 100%);
+  color:#fff; min-height:100dvh;
+  padding-top:var(--sat); padding-bottom:var(--sab);
+  -webkit-text-size-adjust:100%;
+}
+.screen{max-width:560px;margin:0 auto;padding:16px;display:none;}
+.screen.active{display:block;}
+h1{font-size:26px;margin:14px 4px 2px;font-weight:800;letter-spacing:.3px;}
+.sub{color:#bcd0e8;font-size:14px;margin:0 4px 18px;}
+.modes{display:grid;gap:12px;margin-bottom:18px;}
+.mode-btn{
+  border:0;border-radius:var(--radius);padding:18px 16px;text-align:left;cursor:pointer;
+  background:var(--card);color:var(--ink);box-shadow:0 6px 18px rgba(0,0,0,.25);
+  display:flex;align-items:center;gap:14px;font-size:16px;
+}
+.mode-btn .ico{font-size:30px;}
+.mode-btn b{display:block;font-size:17px;}
+.mode-btn span.desc{color:var(--muted);font-size:13px;}
+.mode-btn.selected{outline:3px solid var(--gold);}
+.panel{background:rgba(255,255,255,.08);border-radius:var(--radius);padding:14px;margin-bottom:14px;}
+.panel h3{margin:2px 4px 10px;font-size:14px;text-transform:uppercase;letter-spacing:1px;color:#bcd0e8;font-weight:700;}
+.row{display:flex;gap:10px;flex-wrap:wrap;}
+.chip{
+  border:1.5px solid rgba(255,255,255,.35);background:transparent;color:#fff;
+  border-radius:999px;padding:9px 14px;font-size:14px;cursor:pointer;
+}
+.chip.on{background:var(--gold);border-color:var(--gold);color:#132437;font-weight:700;}
+select{
+  width:100%;font-size:16px;padding:12px;border-radius:12px;border:0;background:var(--card);color:var(--ink);
+  appearance:none;-webkit-appearance:none;
+}
+.start{
+  width:100%;border:0;border-radius:var(--radius);padding:17px;font-size:18px;font-weight:800;cursor:pointer;
+  background:var(--accent2);color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.3);margin-top:4px;
+}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.topbar .back{background:rgba(255,255,255,.15);border:0;color:#fff;border-radius:999px;padding:9px 15px;font-size:14px;cursor:pointer;}
+.counter{font-size:14px;color:#bcd0e8;font-variant-numeric:tabular-nums;}
+.card{
+  background:var(--card);color:var(--ink);border-radius:22px;padding:20px 16px 16px;
+  box-shadow:0 10px 30px rgba(0,0,0,.35);min-height:52dvh;
+  display:flex;flex-direction:column;
+}
+.word{font-size:clamp(30px,9vw,44px);font-weight:800;text-align:center;margin:2px 0 12px;line-height:1.1;}
+.meanings{display:grid;gap:14px;flex:1;}
+.meaning{display:grid;gap:8px;}
+.meaning .catlab{
+  font-size:18px;font-weight:800;letter-spacing:.3px;
+  color:#fff;background:var(--accent);padding:13px 14px;
+  border-radius:14px;text-align:center;
+  box-shadow:0 3px 10px rgba(29,111,216,.3);
+}
+.meaning .catlab.hiddenlab{
+  background:repeating-linear-gradient(45deg,#13315c,#13315c 12px,#1b3f74 12px,#1b3f74 24px);
+  color:#bcd0e8;font-weight:600;font-size:15px;
+}
+.imgwrap{position:relative;width:100%;aspect-ratio:4/3;background:#e8eef6;display:flex;align-items:center;justify-content:center;border:1px solid #e3e9f2;border-radius:16px;overflow:hidden;}
+.imgwrap img{width:100%;height:100%;object-fit:contain;background:#fff;}
+.imgwrap .status{color:var(--muted);font-size:14px;padding:10px;text-align:center;}
+.veil{
+  position:absolute;inset:0;background:repeating-linear-gradient(45deg,#13315c,#13315c 12px,#1b3f74 12px,#1b3f74 24px);
+  display:flex;align-items:center;justify-content:center;color:#fff;font-size:40px;
+}
+.wikilink{font-size:11px;color:#8aa0b8;text-align:right;padding:3px 8px;text-decoration:none;display:block;}
+.controls{display:flex;gap:10px;margin-top:14px;}
+.ctrl{
+  flex:1;border:0;border-radius:16px;padding:16px 8px;font-size:16px;font-weight:700;cursor:pointer;color:#fff;
+}
+.prev{background:rgba(255,255,255,.16);}
+.next{background:var(--accent);}
+.reveal{background:var(--gold);color:#132437;flex:1.4;}
+.reveal[disabled]{opacity:.35;}
+.ctrl:active{transform:scale(.97);}
+.foot{text-align:center;color:#8aa0b8;font-size:11px;margin-top:14px;padding-bottom:8px;}
+.selcount{font-size:13px;color:#e8a33d;margin:6px 4px 0;}
+.catgrid{display:grid;grid-template-columns:1fr;gap:6px;max-height:38dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:2px;}
+.catitem{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.07);border-radius:10px;padding:10px 12px;font-size:14.5px;cursor:pointer;}
+.catitem input{width:19px;height:19px;accent-color:var(--gold);}
+.smallrow{display:flex;gap:8px;margin-bottom:10px;}
+.smallbtn{border:0;background:rgba(255,255,255,.15);color:#fff;border-radius:999px;padding:8px 13px;font-size:13px;cursor:pointer;}
+.badge{background:var(--accent2);color:#fff;border-radius:999px;font-size:11.5px;font-weight:700;padding:3px 10px;margin-left:8px;vertical-align:middle;}
+</style>
+</head>
+<body>
+
+<!-- HOME -->
+<div class="screen active" id="home">
+  <h1>📦 Boîte à mots</h1>
+  <p class="sub">Entraînement vocabulaire — Cadets Air France (Psy0)</p>
+
+  <div class="modes">
+    <button class="mode-btn selected" id="mode1btn" onclick="setMode(1)">
+      <span class="ico">🖼️</span>
+      <span><b>Mode 1 — Présentation</b><span class="desc">Le mot et son image s'affichent ensemble</span></span>
+    </button>
+    <button class="mode-btn" id="mode2btn" onclick="setMode(2)">
+      <span class="ico">🙈</span>
+      <span><b>Mode 2 — Révélation</b><span class="desc">L'image reste cachée jusqu'au bouton « Révéler »</span></span>
+    </button>
+  </div>
+
+  <div class="panel">
+    <h3>Ordre</h3>
+    <div class="row">
+      <button class="chip on" id="ordAlea" onclick="setOrder('alea')">🎲 Aléatoire</button>
+      <button class="chip" id="ordAlpha" onclick="setOrder('alpha')">🔤 Alphabétique</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>Catégories</h3>
+    <div class="smallrow">
+      <button class="smallbtn" onclick="allCats(true)">Tout cocher</button>
+      <button class="smallbtn" onclick="allCats(false)">Tout décocher</button>
+    </div>
+    <div class="catgrid" id="catgrid"></div>
+    <div class="selcount" id="selcount"></div>
+  </div>
+
+  <button class="start" onclick="startSession()">Commencer ➜</button>
+  <p class="foot">Images : Wikipédia / Wikimedia Commons (connexion Internet requise)</p>
+</div>
+
+<!-- CARD -->
+<div class="screen" id="play">
+  <div class="topbar">
+    <button class="back" onclick="goHome()">← Menu</button>
+    <span class="counter" id="counter"></span>
+    <button class="back" onclick="shuffleNow()" title="Mélanger">🎲</button>
+  </div>
+  <div class="card">
+    <div class="word" id="word"></div>
+    <div class="meanings" id="meanings"></div>
+  </div>
+  <div class="controls">
+    <button class="ctrl prev" onclick="nav(-1)">◀ Préc.</button>
+    <button class="ctrl reveal" id="revealBtn" onclick="revealOrNext()">👁 Révéler</button>
+    <button class="ctrl next" id="nextBtn" onclick="nav(1)">Suiv. ▶</button>
+  </div>
+  <p class="foot" id="attrib">Images : Wikipédia / Wikimedia Commons</p>
+</div>
+
+<script>
+const DATA={"cats":[{"l":"Anatomie","h":"anatomie humaine"},{"l":"Animaux, faune — Chiens","h":"race de chien"},{"l":"Animaux, faune — Mammifères","h":"mammifère animal"},{"l":"Animaux, faune — Oiseaux","h":"oiseau"},{"l":"Animaux, faune — Poissons","h":"poisson"},{"l":"Architecture — Batiments","h":"bâtiment architecture"},{"l":"Architecture — Vocabulaire","h":"architecture élément"},{"l":"Armée","h":"militaire armée"},{"l":"Armes","h":"arme"},{"l":"Art — Théâtre","h":"théâtre"},{"l":"Artistes — Compositeur","h":"compositeur musique"},{"l":"Artistes — Ecrivain","h":"écrivain"},{"l":"Artistes — Peintre","h":"peintre"},{"l":"Artistes — Réalisateur","h":"réalisateur cinéma"},{"l":"Astrologie","h":"astrologie zodiaque"},{"l":"Astronomie","h":"astronomie"},{"l":"Astronomie — Planète","h":"système solaire astre"},{"l":"Aviation, Avion","h":"aviation avion"},{"l":"Calendrier","h":"calendrier saison"},{"l":"Couleurs","h":"couleur"},{"l":"Créatures imaginaires","h":"créature légendaire"},{"l":"Danses","h":"danse"},{"l":"Equitation","h":"équitation cheval"},{"l":"Famille","h":"famille"},{"l":"Flore — Légumes","h":"légume plante"},{"l":"Flore — Arbres","h":"arbre"},{"l":"Flore — Fleurs","h":"fleur plante"},{"l":"Flore — Fruits","h":"fruit"},{"l":"Géographie — Fleuves","h":"fleuve"},{"l":"Géographie — Nationalités","h":"pays drapeau"},{"l":"Géographie — Pays","h":"pays"},{"l":"Géographie — Villes","h":"ville capitale"},{"l":"Géographie — Vocabulaire","h":"géographie relief"},{"l":"Géologie, roches, pierres","h":"minéral roche pierre"},{"l":"Habillement — Bijoux","h":"bijou"},{"l":"Habillement — Chapeaux","h":"chapeau coiffure"},{"l":"Habillement — Chaussures","h":"chaussure"},{"l":"Habillement — Couture","h":"couture"},{"l":"Habillement — Vêtements","h":"vêtement"},{"l":"Informatique","h":"informatique"},{"l":"Insectes","h":"insecte"},{"l":"Jeux","h":"jeu jouet"},{"l":"Justice","h":"justice droit"},{"l":"Magie, sortilège","h":"magie"},{"l":"Maison — Pieces","h":"maison habitation"},{"l":"Maladies","h":"maladie médecine"},{"l":"Mathématiques","h":"géométrie mathématiques"},{"l":"Météo","h":"météorologie"},{"l":"Métiers","h":"métier profession"},{"l":"Meubles, équipement","h":"meuble"},{"l":"Musique — Vocabulaire","h":"musique"},{"l":"Musique — Instruments","h":"instrument de musique"},{"l":"Nourriture — Boissons 1","h":"boisson"},{"l":"Nourriture — Boissons 2","h":"boisson alcoolisée"},{"l":"Nourriture — Desserts","h":"dessert pâtisserie"},{"l":"Nourriture — Fromages","h":"fromage"},{"l":"Nourriture — Plats","h":"plat cuisine"},{"l":"Nourriture — Poissons","h":"poisson cuisine"},{"l":"Outils","h":"outil"},{"l":"Politique","h":"politique"},{"l":"Sentiments, ressenti","h":"sentiment émotion"},{"l":"Sport","h":"sport"},{"l":"Styles littéraires","h":"littérature"},{"l":"Théatre","h":"théâtre"},{"l":"Tribunal","h":"tribunal justice"},{"l":"Ustensiles","h":"ustensile de cuisine"},{"l":"Véhicules — Auto","h":"automobile pièce"},{"l":"Véhicules — Types","h":"véhicule transport"},{"l":"Scolaire","h":"école scolaire"}],"words":[{"w":"abbaye","c":[5]},{"w":"abricot","c":[19,27]},{"w":"abscisse","c":[46]},{"w":"absinthe","c":[53]},{"w":"absurdité","c":[60]},{"w":"abysse","c":[32]},{"w":"acacia","c":[26]},{"w":"accordéon","c":[51]},{"w":"acte","c":[9,63]},{"w":"acteur","c":[48]},{"w":"adagio","c":[50]},{"w":"adjoint","c":[59]},{"w":"adjudant","c":[7]},{"w":"adonis","c":[40]},{"w":"agate","c":[33]},{"w":"agrafe","c":[37]},{"w":"aiguille","c":[32,37]},{"w":"aiguillée","c":[37]},{"w":"aile","c":[17,66]},{"w":"ailerons","c":[17]},{"w":"Airbus","c":[17]},{"w":"airelle","c":[27]},{"w":"aisselle","c":[0]},{"w":"ajonc","c":[25]},{"w":"ajusteur","c":[48]},{"w":"albatros","c":[3]},{"w":"albâtre","c":[33]},{"w":"alexandra","c":[53]},{"w":"Algérien","c":[29,30]},{"w":"Allemand","c":[29,30]},{"w":"Allen","c":[13]},{"w":"alliance","c":[34]},{"w":"alluvion","c":[32]},{"w":"Almodovar","c":[13]},{"w":"alto","c":[51]},{"w":"alzheimer","c":[45]},{"w":"amandier","c":[25]},{"w":"amaryllis","c":[26]},{"w":"Amazone","c":[28]},{"w":"amiral","c":[7]},{"w":"amitié","c":[60]},{"w":"Amour","c":[28,60]},{"w":"amulette","c":[43]},{"w":"améthyste","c":[33]},{"w":"an","c":[18]},{"w":"ananas","c":[27]},{"w":"anchois","c":[4]},{"w":"ancolie","c":[26]},{"w":"ancêtre","c":[23]},{"w":"andésite","c":[33]},{"w":"ange","c":[20]},{"w":"angle","c":[46]},{"w":"angoisse","c":[60]},{"w":"anguille","c":[4,57]},{"w":"anisade","c":[52]},{"w":"Ankara","c":[31]},{"w":"annales","c":[62]},{"w":"Annaud","c":[13]},{"w":"année","c":[15]},{"w":"anorak","c":[38]},{"w":"Anouilh","c":[11]},{"w":"anse","c":[6,32]},{"w":"anxiété","c":[60]},{"w":"anémone","c":[26]},{"w":"août","c":[18]},{"w":"aparté","c":[9,63]},{"w":"apogée","c":[14,15]},{"w":"appel","c":[42]},{"w":"apéritif","c":[53]},{"w":"araignée","c":[40]},{"w":"arbuste","c":[25]},{"w":"arc","c":[6,8]},{"w":"arcade","c":[0]},{"w":"arche","c":[6]},{"w":"argentier","c":[49]},{"w":"argile","c":[33]},{"w":"aria","c":[50]},{"w":"armagnac","c":[53]},{"w":"armateur","c":[48]},{"w":"Arménie","c":[30]},{"w":"arpège","c":[50]},{"w":"arsenal","c":[7]},{"w":"artichaut","c":[24]},{"w":"artilleur","c":[7]},{"w":"artisan","c":[48]},{"w":"arum","c":[26]},{"w":"arête","c":[6]},{"w":"assaut","c":[7]},{"w":"assemblée","c":[59]},{"w":"assesseur","c":[42]},{"w":"assiette","c":[65]},{"w":"aster","c":[26]},{"w":"asticot","c":[40]},{"w":"astre","c":[14]},{"w":"astreinte","c":[42]},{"w":"astrolabe","c":[15]},{"w":"astronef","c":[15]},{"w":"astuce","c":[60]},{"w":"astéroïde","c":[15]},{"w":"atoll","c":[32]},{"w":"attaque","c":[7]},{"w":"atterrissage","c":[17]},{"w":"auburn","c":[19]},{"w":"aubépine","c":[25]},{"w":"audition","c":[9]},{"w":"aulne","c":[25]},{"w":"auteur","c":[62]},{"w":"autobus","c":[67]},{"w":"automne","c":[18]},{"w":"automobile","c":[67]},{"w":"Autrichien","c":[29]},{"w":"autruche","c":[3]},{"w":"avenir","c":[14]},{"w":"averse","c":[47]},{"w":"avion","c":[8,67]},{"w":"aviron","c":[61]},{"w":"avis","c":[60]},{"w":"avocat","c":[27,42]},{"w":"avocatier","c":[25]},{"w":"avocette","c":[3]},{"w":"avril","c":[18]},{"w":"axe","c":[46]},{"w":"azalée","c":[26]},{"w":"azimut","c":[14]},{"w":"azur","c":[19]},{"w":"aérogare","c":[5]},{"w":"aéroport","c":[17]},{"w":"aïeul","c":[23]},{"w":"aïkido","c":[61]},{"w":"baba","c":[54]},{"w":"babouche","c":[36]},{"w":"babouin","c":[2]},{"w":"baby-foot","c":[41]},{"w":"Bacon","c":[12]},{"w":"bague","c":[34]},{"w":"baguette","c":[43]},{"w":"baguier","c":[49]},{"w":"baie","c":[32]},{"w":"bail","c":[44]},{"w":"balance","c":[14]},{"w":"baliste","c":[8]},{"w":"ballon","c":[32]},{"w":"ballotage","c":[59]},{"w":"banane","c":[27]},{"w":"bananier","c":[25]},{"w":"banc","c":[49]},{"w":"Bangkok","c":[31]},{"w":"banjo","c":[51]},{"w":"bar","c":[4]},{"w":"baraque","c":[5]},{"w":"bardet","c":[1]},{"w":"barque","c":[67]},{"w":"Bartok","c":[10]},{"w":"baryton","c":[50]},{"w":"basalte","c":[33]},{"w":"base","c":[46]},{"w":"basilique","c":[5]},{"w":"basket","c":[36,61]},{"w":"basse","c":[51]},{"w":"basset","c":[1]},{"w":"bassin","c":[32]},{"w":"bataille","c":[7]},{"w":"bateau","c":[67]},{"w":"baton","c":[8]},{"w":"batterie","c":[51]},{"w":"batteur","c":[65]},{"w":"bauxite","c":[33]},{"w":"bayou","c":[32]},{"w":"bazooka","c":[8]},{"w":"beagle","c":[1]},{"w":"beaufort","c":[55]},{"w":"Beauvoir","c":[11]},{"w":"Becher","c":[12]},{"w":"Becker","c":[13]},{"w":"Belge","c":[29]},{"w":"Bellay","c":[11]},{"w":"belvédère","c":[5]},{"w":"bergère","c":[49]},{"w":"Berlioz","c":[10]},{"w":"bermuda","c":[38]},{"w":"Bertolucci","c":[13]},{"w":"bette","c":[24]},{"w":"biais","c":[37]},{"w":"bichon","c":[1]},{"w":"bicorne","c":[35]},{"w":"bicyclette","c":[67]},{"w":"bidet","c":[49]},{"w":"bielle","c":[66]},{"w":"bijoutier","c":[48]},{"w":"billard","c":[41]},{"w":"billes","c":[41]},{"w":"bison","c":[2]},{"w":"bistre","c":[19]},{"w":"Bizet","c":[10]},{"w":"bizut","c":[68]},{"w":"bière","c":[53]},{"w":"blaireau","c":[2]},{"w":"blanc","c":[19]},{"w":"blanche","c":[50]},{"w":"blatte","c":[40]},{"w":"blazer","c":[38]},{"w":"bleu","c":[55]},{"w":"blockhaus","c":[5]},{"w":"blond","c":[19]},{"w":"bob","c":[35]},{"w":"bobine","c":[37]},{"w":"bobsleigh","c":[61]},{"w":"bobtail","c":[1]},{"w":"bogue","c":[39]},{"w":"Bolivie","c":[30]},{"w":"bombarde","c":[51]},{"w":"bombe","c":[22]},{"w":"bombyx","c":[40]},{"w":"bonbon","c":[54]},{"w":"bonnet","c":[35]},{"w":"boogie","c":[21]},{"w":"bordure","c":[39]},{"w":"Bosch","c":[12]},{"w":"botte","c":[36]},{"w":"bottillon","c":[36]},{"w":"bottine","c":[36]},{"w":"bouche","c":[0]},{"w":"Boucher","c":[12,48]},{"w":"bouchon","c":[65]},{"w":"boudin","c":[56]},{"w":"bouffon","c":[63]},{"w":"bouleau","c":[25]},{"w":"boules","c":[61]},{"w":"boulin","c":[6]},{"w":"bourbon","c":[53]},{"w":"bourrée","c":[21]},{"w":"bouteille","c":[65]},{"w":"bowling","c":[41]},{"w":"boxe","c":[61]},{"w":"boxer","c":[1]},{"w":"bracelet","c":[34]},{"w":"Brahms","c":[10]},{"w":"braque","c":[1,12]},{"w":"bras","c":[32]},{"w":"Brasilia","c":[31]},{"w":"bride","c":[22]},{"w":"brie","c":[55]},{"w":"brigade","c":[7]},{"w":"brioche","c":[54]},{"w":"brique","c":[19]},{"w":"broche","c":[34]},{"w":"brochet","c":[4]},{"w":"brocoli","c":[24]},{"w":"brodequin","c":[36]},{"w":"broderie","c":[37]},{"w":"bronze","c":[19]},{"w":"bruant","c":[3]},{"w":"Bruegel","c":[12]},{"w":"brugnon","c":[27]},{"w":"bruine","c":[47]},{"w":"brumaire","c":[18]},{"w":"brume","c":[47]},{"w":"brun","c":[19]},{"w":"Brésil","c":[30]},{"w":"buanderie","c":[44]},{"w":"building","c":[5]},{"w":"buisson","c":[25]},{"w":"Bulgarie","c":[30]},{"w":"bulldog","c":[1]},{"w":"bulletin","c":[59]},{"w":"bureau","c":[5,49]},{"w":"burin","c":[58]},{"w":"buste","c":[0]},{"w":"butte","c":[32]},{"w":"bâti","c":[37]},{"w":"bébé","c":[23]},{"w":"bécarre","c":[50]},{"w":"bélier","c":[14]},{"w":"bémol","c":[50]},{"w":"béret","c":[35]},{"w":"bêtise","c":[60]},{"w":"caban","c":[38]},{"w":"cabaret","c":[9]},{"w":"cactus","c":[26]},{"w":"cadre","c":[48]},{"w":"cafard","c":[40]},{"w":"café","c":[19]},{"w":"cagibi","c":[44]},{"w":"cagoule","c":[35,38]},{"w":"cahier","c":[68]},{"w":"cake","c":[54]},{"w":"calandre","c":[66]},{"w":"calcaire","c":[33]},{"w":"calcite","c":[33]},{"w":"caleçon","c":[38]},{"w":"Callisto","c":[16]},{"w":"calotte","c":[35]},{"w":"calvados","c":[53]},{"w":"camembert","c":[55]},{"w":"Cameroun","c":[30]},{"w":"camion","c":[67]},{"w":"Camus","c":[11]},{"w":"camélia","c":[26]},{"w":"Canada","c":[30]},{"w":"Canadien","c":[29]},{"w":"canapé","c":[49]},{"w":"canari","c":[3]},{"w":"cancan","c":[21]},{"w":"cancer","c":[14,45]},{"w":"cancrelat","c":[40]},{"w":"candidat","c":[59]},{"w":"cane","c":[3]},{"w":"canevas","c":[37]},{"w":"caniche","c":[1]},{"w":"canif","c":[8]},{"w":"cannette","c":[37]},{"w":"canon","c":[8]},{"w":"canot","c":[67]},{"w":"canotier","c":[35]},{"w":"cantal","c":[55]},{"w":"cap","c":[17,32]},{"w":"cape","c":[38]},{"w":"capeline","c":[35]},{"w":"caporal","c":[7]},{"w":"capote","c":[66]},{"w":"capucine","c":[26]},{"w":"carabine","c":[8]},{"w":"carafe","c":[65]},{"w":"cargo","c":[67]},{"w":"carmin","c":[19]},{"w":"carosse","c":[67]},{"w":"carotte","c":[24]},{"w":"carpe","c":[4]},{"w":"carre","c":[46]},{"w":"carrière","c":[59]},{"w":"cartable","c":[68]},{"w":"cartel","c":[59]},{"w":"cartouche","c":[8]},{"w":"caserne","c":[5,7]},{"w":"casino","c":[5]},{"w":"casquette","c":[35]},{"w":"cassation","c":[42]},{"w":"cassoulet","c":[56]},{"w":"causse","c":[32]},{"w":"cavalier","c":[22]},{"w":"cave","c":[44]},{"w":"cavité","c":[32]},{"w":"cellule","c":[39]},{"w":"centaure","c":[20]},{"w":"centre","c":[46,59]},{"w":"cerceau","c":[41]},{"w":"cercle","c":[46]},{"w":"cerf","c":[2]},{"w":"cerise","c":[27]},{"w":"chacal","c":[2]},{"w":"Chagall","c":[12]},{"w":"chameau","c":[2]},{"w":"chanson","c":[50]},{"w":"chanteur","c":[48]},{"w":"chapelle","c":[5]},{"w":"chapiteau","c":[6]},{"w":"chapka","c":[35]},{"w":"charançon","c":[40]},{"w":"charge","c":[7,42]},{"w":"charlotte","c":[54]},{"w":"charme","c":[43]},{"w":"charrue","c":[67]},{"w":"chas","c":[37]},{"w":"chat","c":[2]},{"w":"chauffeur","c":[48]},{"w":"chausson","c":[36,54]},{"w":"chaîne","c":[34]},{"w":"cheminot","c":[48]},{"w":"chemise","c":[38]},{"w":"chenille","c":[40]},{"w":"chevalière","c":[34]},{"w":"chevet","c":[49]},{"w":"cheville","c":[58]},{"w":"chicorée","c":[52]},{"w":"chien","c":[2]},{"w":"chignole","c":[58]},{"w":"chihuahua","c":[1]},{"w":"Chili","c":[30]},{"w":"Chilien","c":[29]},{"w":"chimiste","c":[48]},{"w":"chimpanzé","c":[2]},{"w":"chinois","c":[65]},{"w":"chocolat","c":[52,54]},{"w":"choléra","c":[45]},{"w":"Chopin","c":[10]},{"w":"choreute","c":[9]},{"w":"chorus","c":[50]},{"w":"choucroute","c":[56]},{"w":"chouette","c":[3]},{"w":"chow-chow","c":[1]},{"w":"chronique","c":[62]},{"w":"châle","c":[38]},{"w":"châssis","c":[66]},{"w":"châtain","c":[19]},{"w":"chèvre","c":[2]},{"w":"chêne","c":[25]},{"w":"cidre","c":[53]},{"w":"cigale","c":[40]},{"w":"cintre","c":[63]},{"w":"cirque","c":[15]},{"w":"cisaille","c":[58]},{"w":"citation","c":[62]},{"w":"cithare","c":[51]},{"w":"clafoutis","c":[54]},{"w":"claque","c":[9,63]},{"w":"claquettes","c":[21]},{"w":"classe","c":[42,68]},{"w":"classeur","c":[42]},{"w":"clavier","c":[39]},{"w":"cloche","c":[51]},{"w":"clocheton","c":[5,6]},{"w":"clou","c":[58]},{"w":"clown","c":[48]},{"w":"cluse","c":[32]},{"w":"cochon","c":[2]},{"w":"cocker","c":[1]},{"w":"cockpit","c":[17]},{"w":"cocktail","c":[53]},{"w":"cocotte","c":[65]},{"w":"Cocteau","c":[11]},{"w":"coffre","c":[66]},{"w":"coiffe","c":[35]},{"w":"coiffeur","c":[48]},{"w":"coiffeuse","c":[49]},{"w":"coing","c":[27]},{"w":"cola","c":[52]},{"w":"colchique","c":[26]},{"w":"collants","c":[38]},{"w":"colle","c":[68]},{"w":"colley","c":[1]},{"w":"colline","c":[32]},{"w":"Colombie","c":[30]},{"w":"colonne","c":[6]},{"w":"Columbia","c":[28]},{"w":"colère","c":[60]},{"w":"combe","c":[32]},{"w":"comble","c":[6]},{"w":"comma","c":[50]},{"w":"commando","c":[7]},{"w":"commode","c":[49]},{"w":"compote","c":[54]},{"w":"compromis","c":[42,64]},{"w":"comptoir","c":[49]},{"w":"comte","c":[55]},{"w":"comète","c":[15]},{"w":"comédie","c":[62]},{"w":"concerto","c":[50]},{"w":"concombre","c":[24]},{"w":"condamne","c":[42]},{"w":"condor","c":[3]},{"w":"Congo","c":[28]},{"w":"congre","c":[4]},{"w":"congres","c":[59]},{"w":"conifère","c":[25]},{"w":"conjoint","c":[23]},{"w":"consul","c":[59]},{"w":"contact","c":[66]},{"w":"conte","c":[62]},{"w":"continent","c":[32]},{"w":"copilote","c":[17]},{"w":"Coppola","c":[13]},{"w":"coquetier","c":[65]},{"w":"cor","c":[51]},{"w":"corbeau","c":[3]},{"w":"corbeille","c":[9,63]},{"w":"cordon","c":[37]},{"w":"cormoran","c":[3]},{"w":"cornet","c":[51]},{"w":"cornette","c":[35]},{"w":"cornichon","c":[24]},{"w":"corpus","c":[62]},{"w":"corridor","c":[44]},{"w":"corsage","c":[38]},{"w":"cortex","c":[0]},{"w":"Corée","c":[30]},{"w":"cosinus","c":[46]},{"w":"costume","c":[38]},{"w":"cothurne","c":[36]},{"w":"coucou","c":[3]},{"w":"couloir","c":[44]},{"w":"coupe","c":[37,65]},{"w":"coupelle","c":[65]},{"w":"couple","c":[23]},{"w":"cour","c":[42]},{"w":"courant","c":[62]},{"w":"courbe","c":[46]},{"w":"Courbet","c":[12]},{"w":"courge","c":[24]},{"w":"course","c":[61]},{"w":"courtine","c":[6]},{"w":"cousin","c":[23,40]},{"w":"couteau","c":[8,65]},{"w":"couvercle","c":[65]},{"w":"couvert","c":[65]},{"w":"crachin","c":[47]},{"w":"cratère","c":[32]},{"w":"cravate","c":[38]},{"w":"crevasse","c":[32]},{"w":"cricket","c":[61]},{"w":"criquet","c":[40]},{"w":"critique","c":[62]},{"w":"crocus","c":[26]},{"w":"croissant","c":[15]},{"w":"crottin","c":[55]},{"w":"crème","c":[54]},{"w":"crécelle","c":[51]},{"w":"crédulité","c":[60]},{"w":"Cuba","c":[30]},{"w":"cube","c":[46]},{"w":"cubes","c":[41]},{"w":"cuiler","c":[65]},{"w":"culasse","c":[66]},{"w":"culbuteur","c":[66]},{"w":"curseur","c":[39]},{"w":"cutter","c":[58]},{"w":"cyan","c":[19]},{"w":"cycle","c":[15]},{"w":"cyclisme","c":[61]},{"w":"cylindre","c":[66]},{"w":"cèdre","c":[25]},{"w":"céleri","c":[24]},{"w":"célibat","c":[23]},{"w":"dague","c":[8]},{"w":"dahu","c":[20]},{"w":"Dali","c":[12]},{"w":"dalmatien","c":[1]},{"w":"Damas","c":[31]},{"w":"Danois","c":[29,30]},{"w":"danseur","c":[48]},{"w":"Danube","c":[28]},{"w":"Darling","c":[28]},{"w":"date","c":[18]},{"w":"dattier","c":[25]},{"w":"Daudet","c":[11]},{"w":"De Sica","c":[13]},{"w":"Debussy","c":[10]},{"w":"Degas","c":[12]},{"w":"Delacroix","c":[12]},{"w":"delta","c":[32]},{"w":"destinée","c":[14]},{"w":"devoir","c":[68]},{"w":"diabolo","c":[52]},{"w":"diadème","c":[34]},{"w":"diagonale","c":[46]},{"w":"dialogue","c":[9,62,63]},{"w":"diamant","c":[33]},{"w":"diapason","c":[50]},{"w":"dictée","c":[68]},{"w":"diesel","c":[66]},{"w":"digestif","c":[53]},{"w":"diorite","c":[33]},{"w":"diplomate","c":[59]},{"w":"diplôme","c":[68]},{"w":"directeur","c":[68]},{"w":"disque","c":[39,66]},{"w":"diva","c":[50]},{"w":"division","c":[7]},{"w":"dièse","c":[50]},{"w":"doberman","c":[1]},{"w":"doctorat","c":[68]},{"w":"dogue","c":[1]},{"w":"donnée","c":[39]},{"w":"dos-d'âne","c":[49]},{"w":"dossier","c":[39]},{"w":"doubleur","c":[9]},{"w":"doublure","c":[37,63]},{"w":"Douve","c":[28]},{"w":"dragon","c":[20]},{"w":"drame","c":[9,62]},{"w":"dressoir","c":[49]},{"w":"droite","c":[59]},{"w":"Duchamp","c":[12]},{"w":"Dufy","c":[12]},{"w":"Dumas","c":[11]},{"w":"duplex","c":[44]},{"w":"durite","c":[66]},{"w":"dytique","c":[40]},{"w":"dècembre","c":[18]},{"w":"débardeur","c":[38]},{"w":"décagone","c":[46]},{"w":"décan","c":[14]},{"w":"décathlon","c":[61]},{"w":"décision","c":[60]},{"w":"décoction","c":[52]},{"w":"décor","c":[63]},{"w":"découpe","c":[37]},{"w":"décours","c":[15]},{"w":"décret","c":[59]},{"w":"dédain","c":[60]},{"w":"défaite","c":[7]},{"w":"défense","c":[7]},{"w":"défilé","c":[32]},{"w":"délibère","c":[42]},{"w":"démarreur","c":[66]},{"w":"député","c":[59]},{"w":"dérive","c":[17]},{"w":"désir","c":[60]},{"w":"détresse","c":[60]},{"w":"détroit","c":[32]},{"w":"dôme","c":[6]},{"w":"Eastwood","c":[13]},{"w":"Easy Jet","c":[17]},{"w":"eau","c":[52]},{"w":"edam","c":[55]},{"w":"edelweiss","c":[26]},{"w":"Efis","c":[17]},{"w":"efraie","c":[3]},{"w":"Egyptien","c":[29]},{"w":"Elbe","c":[28]},{"w":"embrasure","c":[6]},{"w":"embrun","c":[47]},{"w":"emmental","c":[55]},{"w":"endive","c":[24]},{"w":"entrecôte","c":[56]},{"w":"entrelacs","c":[6]},{"w":"entremets","c":[54]},{"w":"erg","c":[32]},{"w":"escabeau","c":[49]},{"w":"escadron","c":[7]},{"w":"escalier","c":[44]},{"w":"escarpin","c":[36]},{"w":"escopette","c":[8]},{"w":"escrime","c":[61]},{"w":"espace","c":[15]},{"w":"espadon","c":[4,57]},{"w":"Espagne","c":[30]},{"w":"essieu","c":[66]},{"w":"estuaire","c":[32]},{"w":"esturgeon","c":[4]},{"w":"Ethiopie","c":[30]},{"w":"Europe","c":[16]},{"w":"examen","c":[42]},{"w":"expert","c":[48]},{"w":"exposé","c":[68]},{"w":"externat","c":[68]},{"w":"face","c":[0]},{"w":"facteur","c":[48]},{"w":"faction","c":[7]},{"w":"faculté","c":[5]},{"w":"faille","c":[32]},{"w":"faisan","c":[3]},{"w":"faitout","c":[65]},{"w":"fandango","c":[21]},{"w":"fanfare","c":[50]},{"w":"fanfrelon","c":[20]},{"w":"fantaisie","c":[60]},{"w":"fantôme","c":[20]},{"w":"faon","c":[2]},{"w":"farce","c":[9,63]},{"w":"farfadet","c":[20]},{"w":"faucheux","c":[40]},{"w":"faucon","c":[3]},{"w":"faufil","c":[37]},{"w":"faune","c":[20]},{"w":"fauve","c":[19]},{"w":"fauvette","c":[3]},{"w":"femme","c":[23]},{"w":"fenouil","c":[24]},{"w":"fenêtre","c":[39,44]},{"w":"fesse","c":[0]},{"w":"feston","c":[37]},{"w":"feta","c":[55]},{"w":"feutre","c":[35]},{"w":"fiancé","c":[23]},{"w":"figurant","c":[63]},{"w":"financier","c":[54]},{"w":"finesse","c":[60]},{"w":"fizz","c":[52]},{"w":"flamenco","c":[21]},{"w":"Flaubert","c":[11]},{"w":"Fleming","c":[13]},{"w":"fleuriste","c":[48]},{"w":"flipper","c":[41]},{"w":"floréal","c":[18]},{"w":"flétan","c":[4]},{"w":"flûte","c":[51]},{"w":"folie","c":[60]},{"w":"fondue","c":[56]},{"w":"footing","c":[61]},{"w":"forestier","c":[48]},{"w":"format","c":[39]},{"w":"formation","c":[68]},{"w":"formule","c":[43]},{"w":"forsythia","c":[26]},{"w":"fou","c":[3]},{"w":"foulard","c":[38]},{"w":"fourche","c":[8]},{"w":"fourgon","c":[67]},{"w":"fourme","c":[55]},{"w":"foyer","c":[23]},{"w":"fraise","c":[58]},{"w":"fraisier","c":[54]},{"w":"framboise","c":[27]},{"w":"France","c":[30]},{"w":"Français","c":[29]},{"w":"frappe","c":[39]},{"w":"freesia","c":[26]},{"w":"Freetoown","c":[31]},{"w":"frein","c":[66]},{"w":"frelon","c":[40]},{"w":"friandise","c":[54]},{"w":"frimaire","c":[18]},{"w":"fronde","c":[8]},{"w":"fronton","c":[6]},{"w":"frêne","c":[25]},{"w":"fureur","c":[60]},{"w":"fuschia","c":[26]},{"w":"fuseau","c":[37,38]},{"w":"fuselage","c":[17]},{"w":"fusil","c":[8]},{"w":"fusée","c":[8]},{"w":"fève","c":[24]},{"w":"galaxie","c":[15]},{"w":"galerie","c":[6]},{"w":"galette","c":[54]},{"w":"galon","c":[7]},{"w":"galop","c":[22]},{"w":"Gambie","c":[30]},{"w":"gamme","c":[50]},{"w":"Gange","c":[28]},{"w":"ganse","c":[37]},{"w":"Ganymède","c":[16]},{"w":"garage","c":[5,44]},{"w":"garagiste","c":[48]},{"w":"garde","c":[7]},{"w":"gardon","c":[4]},{"w":"Garonne","c":[28]},{"w":"gastro-enterite","c":[45]},{"w":"gauche","c":[59]},{"w":"gaufre","c":[54]},{"w":"gaufrette","c":[54]},{"w":"geai","c":[3]},{"w":"gendre","c":[23]},{"w":"genet","c":[25]},{"w":"genou","c":[0]},{"w":"Georgie","c":[30]},{"w":"gibbon","c":[2]},{"w":"giboulée","c":[47]},{"w":"gibus","c":[35]},{"w":"gicleur","c":[66]},{"w":"gigot","c":[56]},{"w":"gigue","c":[21]},{"w":"gin","c":[53]},{"w":"Giotto","c":[12]},{"w":"giroflée","c":[26]},{"w":"givre","c":[47]},{"w":"glaise","c":[33]},{"w":"glossaire","c":[62]},{"w":"gnome","c":[20]},{"w":"golfe","c":[32]},{"w":"gondole","c":[49]},{"w":"goujon","c":[4]},{"w":"Gounod","c":[10]},{"w":"gourmette","c":[34]},{"w":"gouttière","c":[6]},{"w":"Goya","c":[12]},{"w":"goyave","c":[27]},{"w":"grade","c":[46]},{"w":"grange","c":[5]},{"w":"granite","c":[33]},{"w":"graphite","c":[33]},{"w":"gratin","c":[56]},{"w":"grattoir","c":[58]},{"w":"graveur","c":[39]},{"w":"gravité","c":[15]},{"w":"grenade","c":[8]},{"w":"grenadier","c":[25]},{"w":"Griffith","c":[13]},{"w":"griffon","c":[1]},{"w":"grillon","c":[40]},{"w":"grimoire","c":[43]},{"w":"grippe","c":[45]},{"w":"gris","c":[19]},{"w":"grive","c":[3]},{"w":"grog","c":[53]},{"w":"grue","c":[3]},{"w":"gruyère","c":[55]},{"w":"Grèce","c":[30]},{"w":"grès","c":[33]},{"w":"grésil","c":[47]},{"w":"grêle","c":[47]},{"w":"guerre","c":[7]},{"w":"guichet","c":[63]},{"w":"guimbarde","c":[51]},{"w":"Guinée","c":[30]},{"w":"guitare","c":[51]},{"w":"Guitry","c":[13]},{"w":"guépard","c":[2]},{"w":"guêpe","c":[40]},{"w":"guêtre","c":[36,38]},{"w":"géant","c":[20]},{"w":"gémeaux","c":[14]},{"w":"génie","c":[20,60]},{"w":"géomancie","c":[14]},{"w":"géranium","c":[26]},{"w":"Géricault","c":[12]},{"w":"hache","c":[8]},{"w":"Haendel","c":[10]},{"w":"haie","c":[25]},{"w":"haine","c":[60]},{"w":"halo","c":[15]},{"w":"handball","c":[61]},{"w":"hangar","c":[5]},{"w":"hanneton","c":[40]},{"w":"haricot","c":[24]},{"w":"harmonica","c":[51]},{"w":"harmonium","c":[51]},{"w":"hauteur","c":[46]},{"w":"Haydn","c":[10]},{"w":"heptagone","c":[46]},{"w":"hexagone","c":[46]},{"w":"hiver","c":[18]},{"w":"hochet","c":[41]},{"w":"hockey","c":[61]},{"w":"Hollandais","c":[29]},{"w":"Honduras","c":[30]},{"w":"Hongrie","c":[30]},{"w":"Hop","c":[17]},{"w":"horizon","c":[15]},{"w":"horloge","c":[49]},{"w":"horloger","c":[48]},{"w":"horoscope","c":[14]},{"w":"hospice","c":[5]},{"w":"hublot","c":[17]},{"w":"Hugo","c":[11]},{"w":"huissier","c":[42]},{"w":"hulotte","c":[3]},{"w":"humidité","c":[47]},{"w":"humour","c":[60]},{"w":"Hunebelle","c":[13]},{"w":"husky","c":[1]},{"w":"hydravion","c":[67]},{"w":"hydromel","c":[53]},{"w":"hyperbole","c":[46]},{"w":"hélicon","c":[51]},{"w":"hélicoptère","c":[67]},{"w":"hépatite","c":[45]},{"w":"héritage","c":[23]},{"w":"hérédité","c":[23]},{"w":"hêtre","c":[25]},{"w":"hôtel","c":[5]},{"w":"idée","c":[60]},{"w":"if","c":[25]},{"w":"igloo","c":[5]},{"w":"ignorance","c":[60]},{"w":"impunité","c":[42]},{"w":"incrément","c":[39]},{"w":"inculpe","c":[42]},{"w":"indigo","c":[19]},{"w":"Indus","c":[28]},{"w":"infusion","c":[52]},{"w":"Ingres","c":[12]},{"w":"ingénieur","c":[48]},{"w":"ingénue","c":[63]},{"w":"instance","c":[42]},{"w":"institut","c":[5]},{"w":"interface","c":[39]},{"w":"intrigue","c":[62,63]},{"w":"invasion","c":[7]},{"w":"Io","c":[16]},{"w":"Irak","c":[30]},{"w":"Irlandais","c":[30]},{"w":"isba","c":[5]},{"w":"Islandais","c":[29]},{"w":"isoloir","c":[59]},{"w":"Israël","c":[30]},{"w":"isthme","c":[32]},{"w":"Italien","c":[30]},{"w":"jacinthe","c":[26]},{"w":"jade","c":[19,33]},{"w":"jante","c":[66]},{"w":"janvier","c":[18]},{"w":"Japon","c":[30]},{"w":"Jarry","c":[11]},{"w":"jars","c":[2]},{"w":"jaspe","c":[33]},{"w":"java","c":[21]},{"w":"javelot","c":[8]},{"w":"jeep","c":[66]},{"w":"jeudi","c":[18]},{"w":"Jodhpur","c":[22]},{"w":"joncquille","c":[26]},{"w":"jour","c":[18]},{"w":"Jourdain","c":[28]},{"w":"judo","c":[61]},{"w":"juge","c":[48]},{"w":"jugement","c":[42]},{"w":"juillet","c":[18]},{"w":"juin","c":[18]},{"w":"jujube","c":[27]},{"w":"Jupiter","c":[16]},{"w":"jury","c":[42]},{"w":"juré","c":[42]},{"w":"justice","c":[42]},{"w":"kabbale","c":[43]},{"w":"kaki","c":[19]},{"w":"kayak","c":[61]},{"w":"Kazakh","c":[29]},{"w":"kendo","c":[61]},{"w":"Kigali","c":[31]},{"w":"Kinshasa","c":[31]},{"w":"kiwi","c":[27]},{"w":"klaxon","c":[66]},{"w":"korrigan","c":[20]},{"w":"kroumir","c":[36]},{"w":"kéfir","c":[52]},{"w":"képi","c":[35]},{"w":"labrador","c":[1]},{"w":"lagune","c":[32]},{"w":"lait","c":[52]},{"w":"laitue","c":[24]},{"w":"langueur","c":[60]},{"w":"lanterne","c":[66]},{"w":"lapis","c":[33]},{"w":"lapis-lazuli","c":[33]},{"w":"lavande","c":[26]},{"w":"lazurite","c":[33]},{"w":"lecteur","c":[39]},{"w":"legiste","c":[64]},{"w":"lente","c":[40]},{"w":"lentille","c":[24]},{"w":"Leroux","c":[11]},{"w":"lever","c":[63]},{"w":"levier","c":[66]},{"w":"Liban","c":[30]},{"w":"libellule","c":[40]},{"w":"libraire","c":[48]},{"w":"licence","c":[68]},{"w":"licorne","c":[20]},{"w":"liege","c":[25]},{"w":"lieu","c":[57]},{"w":"lignage","c":[23]},{"w":"lignée","c":[23]},{"w":"lilas","c":[26]},{"w":"Lima","c":[31]},{"w":"limace","c":[40]},{"w":"limande","c":[4]},{"w":"limbe","c":[15]},{"w":"lime","c":[58]},{"w":"limon","c":[32]},{"w":"limonade","c":[52]},{"w":"limousine","c":[66]},{"w":"Limpopo","c":[28]},{"w":"lion","c":[14]},{"w":"liqueur","c":[53]},{"w":"Lisbonne","c":[31]},{"w":"liseron","c":[26]},{"w":"liseuse","c":[49]},{"w":"liste","c":[59]},{"w":"littoral","c":[32]},{"w":"livarot","c":[55]},{"w":"livreur","c":[48]},{"w":"lobe","c":[0]},{"w":"loge","c":[9,63]},{"w":"logique","c":[60]},{"w":"Loire","c":[28]},{"w":"Londres","c":[31]},{"w":"loriot","c":[3]},{"w":"losange","c":[46]},{"w":"Losey","c":[13]},{"w":"Loti","c":[11]},{"w":"loto","c":[41]},{"w":"lotte","c":[57]},{"w":"Lotto","c":[12]},{"w":"loulou","c":[1]},{"w":"loup","c":[2]},{"w":"lucarne","c":[6]},{"w":"Lucas","c":[13]},{"w":"Lully","c":[10]},{"w":"lunaison","c":[15]},{"w":"lundi","c":[18]},{"w":"Lune","c":[16]},{"w":"lupin","c":[26]},{"w":"luth","c":[51]},{"w":"lutin","c":[20]},{"w":"lycée","c":[68]},{"w":"lynx","c":[2]},{"w":"lyre","c":[51]},{"w":"lys","c":[26]},{"w":"lyçée","c":[5]},{"w":"lèvre","c":[0]},{"w":"légion","c":[7]},{"w":"lévrier","c":[1]},{"w":"lézard","c":[40]},{"w":"macaque","c":[2]},{"w":"macarena","c":[21]},{"w":"macareux","c":[3]},{"w":"mach","c":[17]},{"w":"madison","c":[21]},{"w":"magasin","c":[5]},{"w":"mage","c":[43]},{"w":"magenta","c":[19]},{"w":"magicien","c":[43]},{"w":"magistrat","c":[48]},{"w":"maille","c":[37]},{"w":"maillet","c":[58]},{"w":"maillot","c":[38]},{"w":"maison","c":[5]},{"w":"major","c":[7]},{"w":"majorité","c":[59]},{"w":"malachite","c":[33]},{"w":"malamute","c":[1]},{"w":"malaria","c":[45]},{"w":"malheur","c":[60]},{"w":"Mali","c":[30]},{"w":"maman","c":[23]},{"w":"mambo","c":[21]},{"w":"mandat","c":[59]},{"w":"Manet","c":[12]},{"w":"Mankiewicz","c":[13]},{"w":"Mann","c":[13]},{"w":"manoir","c":[5]},{"w":"manuel","c":[68]},{"w":"maquerau","c":[4]},{"w":"marcassin","c":[2]},{"w":"marche","c":[44,61]},{"w":"mardi","c":[18]},{"w":"mari","c":[23]},{"w":"mariage","c":[23]},{"w":"marmitte","c":[65]},{"w":"Marocain","c":[29]},{"w":"marron","c":[19]},{"w":"Mars","c":[16,18]},{"w":"martinet","c":[3]},{"w":"marxisme","c":[59]},{"w":"masse","c":[58]},{"w":"Massenet","c":[10]},{"w":"mastiff","c":[1]},{"w":"matière","c":[15,68]},{"w":"matraque","c":[8]},{"w":"maîtrise","c":[68]},{"w":"meccano","c":[41]},{"w":"melon","c":[27]},{"w":"membre","c":[0]},{"w":"menu","c":[39]},{"w":"menuet","c":[50]},{"w":"mercerie","c":[37]},{"w":"mercredi","c":[18]},{"w":"Mercure","c":[16]},{"w":"meringue","c":[54]},{"w":"merlan","c":[4]},{"w":"merlu","c":[4]},{"w":"message","c":[39]},{"w":"messidor","c":[18]},{"w":"mesure","c":[50]},{"w":"meule","c":[58]},{"w":"Mexico","c":[31]},{"w":"mica","c":[33]},{"w":"mikado","c":[41]},{"w":"milan","c":[3]},{"w":"militant","c":[59]},{"w":"mime","c":[63]},{"w":"mine","c":[8]},{"w":"minibus","c":[67]},{"w":"ministre","c":[48]},{"w":"minitel","c":[39]},{"w":"mirabelle","c":[27]},{"w":"missile","c":[8]},{"w":"mistigri","c":[41]},{"w":"misère","c":[26]},{"w":"mite","c":[40]},{"w":"mocassin","c":[36]},{"w":"modem","c":[39]},{"w":"moelle","c":[0]},{"w":"moineau","c":[3]},{"w":"mois","c":[18]},{"w":"moka","c":[54]},{"w":"molesse","c":[60]},{"w":"Molinaro","c":[13]},{"w":"monarchie","c":[59]},{"w":"Monet","c":[12]},{"w":"moniteur","c":[39]},{"w":"monogamie","c":[23]},{"w":"monopoly","c":[41]},{"w":"monospace","c":[66]},{"w":"mont","c":[32]},{"w":"montagne","c":[32]},{"w":"monteur","c":[48]},{"w":"morpion","c":[40]},{"w":"mors","c":[22]},{"w":"mortier","c":[8]},{"w":"Moskva","c":[28]},{"w":"motel","c":[5]},{"w":"moteur","c":[66]},{"w":"moto","c":[61,67]},{"w":"moucheron","c":[40]},{"w":"mouette","c":[3]},{"w":"moule","c":[65]},{"w":"moulin","c":[5]},{"w":"moulure","c":[6]},{"w":"mousquet","c":[8]},{"w":"mousseux","c":[53]},{"w":"moustique","c":[40]},{"w":"mouvement","c":[50]},{"w":"moyen-duc","c":[3]},{"w":"moyeu","c":[66]},{"w":"Mozart","c":[10]},{"w":"mozzarella","c":[55]},{"w":"muguet","c":[26]},{"w":"mule","c":[36]},{"w":"mulet","c":[4]},{"w":"munster","c":[55]},{"w":"mur","c":[44]},{"w":"muraille","c":[6]},{"w":"Murray","c":[28]},{"w":"murène","c":[4]},{"w":"muscat","c":[53]},{"w":"muscle","c":[0]},{"w":"musicien","c":[48]},{"w":"mygale","c":[40]},{"w":"mystère","c":[9]},{"w":"mère","c":[23]},{"w":"mètre","c":[58]},{"w":"méchoui","c":[56]},{"w":"médaille","c":[34]},{"w":"médiane","c":[46]},{"w":"médium","c":[14]},{"w":"mégabit","c":[39]},{"w":"Mékong","c":[28]},{"w":"mélodica","c":[51]},{"w":"mémoire","c":[39]},{"w":"mémoires","c":[62]},{"w":"ménage","c":[23]},{"w":"méningite","c":[45]},{"w":"ménisque","c":[0]},{"w":"mépris","c":[60]},{"w":"mérou","c":[4,57]},{"w":"mésange","c":[3]},{"w":"métreur","c":[48]},{"w":"métro","c":[67]},{"w":"météore","c":[15]},{"w":"mûre","c":[27]},{"w":"nadir","c":[15]},{"w":"narcisse","c":[26]},{"w":"narine","c":[0]},{"w":"narrateur","c":[62]},{"w":"navarin","c":[56]},{"w":"navet","c":[24]},{"w":"navette","c":[37]},{"w":"naïade","c":[20]},{"w":"nectar","c":[52,53]},{"w":"neige","c":[47]},{"w":"Neptune","c":[16]},{"w":"Nerval","c":[11]},{"w":"neutron","c":[15]},{"w":"Niamey","c":[31]},{"w":"Niger","c":[28,30]},{"w":"Nigérian","c":[29]},{"w":"Nil","c":[28]},{"w":"niveau","c":[58]},{"w":"nivôse","c":[18]},{"w":"noces","c":[23]},{"w":"noire","c":[50]},{"w":"nombril","c":[0]},{"w":"Norvègien","c":[29]},{"w":"note","c":[68]},{"w":"nova","c":[15]},{"w":"novembre","c":[18]},{"w":"noyau","c":[15]},{"w":"nuque","c":[0]},{"w":"nymphe","c":[20]},{"w":"nèfle","c":[27]},{"w":"nèpe","c":[40]},{"w":"nénuphar","c":[26]},{"w":"Népal","c":[30]},{"w":"objet","c":[39]},{"w":"oblique","c":[46]},{"w":"obstacle","c":[22]},{"w":"obusier","c":[8]},{"w":"ocelot","c":[2]},{"w":"octet","c":[39]},{"w":"octobre","c":[18]},{"w":"odéon","c":[9]},{"w":"oeillet","c":[26]},{"w":"Offenbach","c":[10]},{"w":"officier","c":[7,48]},{"w":"ogive","c":[6]},{"w":"oie","c":[3]},{"w":"oignon","c":[24]},{"w":"omnibus","c":[67]},{"w":"onagre","c":[8]},{"w":"onyx","c":[33]},{"w":"Ophuls","c":[13]},{"w":"opinion","c":[60]},{"w":"opossum","c":[2]},{"w":"opéra","c":[5,50]},{"w":"orage","c":[47]},{"w":"orange","c":[27]},{"w":"oranger","c":[25]},{"w":"orbe","c":[15]},{"w":"orbite","c":[0,15]},{"w":"orchestre","c":[9,50]},{"w":"orchidée","c":[26]},{"w":"organe","c":[0]},{"w":"orgue","c":[51]},{"w":"orgueil","c":[60]},{"w":"origine","c":[46]},{"w":"orme","c":[25]},{"w":"ormeau","c":[25]},{"w":"orteil","c":[0]},{"w":"Oslo","c":[31]},{"w":"otarie","c":[2]},{"w":"otite","c":[45]},{"w":"oubli","c":[60]},{"w":"Ouganda","c":[30]},{"w":"ouistiti","c":[2]},{"w":"ours","c":[2]},{"w":"outil","c":[39]},{"w":"ouvreur","c":[9]},{"w":"Ouzbek","c":[29]},{"w":"ovale","c":[46]},{"w":"Pagnol","c":[11]},{"w":"palmier","c":[25]},{"w":"paludisme","c":[45]},{"w":"Panama","c":[28,30,35]},{"w":"panda","c":[2]},{"w":"panoplie","c":[41]},{"w":"pantalon","c":[38]},{"w":"pantoufle","c":[36]},{"w":"papa","c":[23]},{"w":"papillon","c":[40]},{"w":"paquebot","c":[67]},{"w":"parabole","c":[46]},{"w":"parallèle","c":[46]},{"w":"pardessus","c":[38]},{"w":"parent","c":[23]},{"w":"parka","c":[38]},{"w":"parkinson","c":[45]},{"w":"parlement","c":[59]},{"w":"parmesan","c":[55]},{"w":"paroi","c":[32]},{"w":"parterre","c":[9]},{"w":"partisan","c":[59]},{"w":"partition","c":[50]},{"w":"pas","c":[22]},{"w":"paso","c":[21]},{"w":"Pasolini","c":[13]},{"w":"passion","c":[60]},{"w":"pastis","c":[53]},{"w":"patate","c":[24]},{"w":"patchwork","c":[37]},{"w":"patron","c":[37]},{"w":"paume","c":[41]},{"w":"paupiette","c":[56]},{"w":"paupière","c":[0]},{"w":"pause","c":[50]},{"w":"pavillon","c":[6,66]},{"w":"pavot","c":[26]},{"w":"peine","c":[42]},{"w":"Pekin","c":[31]},{"w":"pelote","c":[37]},{"w":"pendentif","c":[34]},{"w":"Pennac","c":[11]},{"w":"pensée","c":[26,60]},{"w":"perceuse","c":[58]},{"w":"perche","c":[4]},{"w":"perdreau","c":[3]},{"w":"perdrix","c":[3]},{"w":"pervenche","c":[26]},{"w":"peste","c":[45]},{"w":"petit-duc","c":[3]},{"w":"phalange","c":[0]},{"w":"phare","c":[5,66]},{"w":"phasme","c":[40]},{"w":"phobie","c":[60]},{"w":"piano","c":[49]},{"w":"pic","c":[32]},{"w":"pigeon","c":[3]},{"w":"pignon","c":[6]},{"w":"pilastre","c":[6]},{"w":"pilier","c":[6]},{"w":"piment","c":[24]},{"w":"pinacle","c":[6]},{"w":"pince","c":[58]},{"w":"pipeau","c":[51]},{"w":"piquet","c":[41]},{"w":"piqure","c":[37]},{"w":"pissenlit","c":[24]},{"w":"piston","c":[66]},{"w":"pitbull","c":[1]},{"w":"pièce","c":[44]},{"w":"piété","c":[60]},{"w":"placard","c":[49]},{"w":"plafond","c":[44]},{"w":"plage","c":[32]},{"w":"plaignant","c":[42]},{"w":"plaine","c":[32]},{"w":"plaisir","c":[60]},{"w":"plan","c":[46]},{"w":"planète","c":[14]},{"w":"platane","c":[25]},{"w":"plateau","c":[32]},{"w":"pli","c":[37]},{"w":"plombier","c":[48]},{"w":"pluie","c":[47]},{"w":"Pluton","c":[16]},{"w":"pluviôse","c":[18]},{"w":"pneu","c":[66]},{"w":"pogne","c":[54]},{"w":"poignard","c":[8]},{"w":"poignet","c":[0]},{"w":"pointe","c":[58]},{"w":"pointer","c":[1]},{"w":"poinçon","c":[58]},{"w":"poire","c":[27]},{"w":"poirier","c":[25]},{"w":"poissons","c":[14]},{"w":"poivron","c":[24]},{"w":"polder","c":[32]},{"w":"policier","c":[48]},{"w":"polka","c":[21]},{"w":"polo","c":[61]},{"w":"Polonais","c":[29]},{"w":"polygone","c":[46]},{"w":"pomme","c":[27]},{"w":"pommier","c":[25]},{"w":"ponceuse","c":[58]},{"w":"poncho","c":[38]},{"w":"poney","c":[2]},{"w":"porche","c":[6]},{"w":"port","c":[39]},{"w":"portance","c":[17]},{"w":"portique","c":[6]},{"w":"portière","c":[66]},{"w":"porto","c":[53]},{"w":"Portugal","c":[30]},{"w":"portée","c":[50]},{"w":"potion","c":[43]},{"w":"potiron","c":[24]},{"w":"pouce","c":[0]},{"w":"poulaine","c":[36]},{"w":"poule","c":[3]},{"w":"pourpre","c":[19]},{"w":"pourvoi","c":[42]},{"w":"poussin","c":[3]},{"w":"pouvoir","c":[43,59]},{"w":"poème","c":[62]},{"w":"poésie","c":[62]},{"w":"poêle","c":[65]},{"w":"Prague","c":[31]},{"w":"prairial","c":[18]},{"w":"praline","c":[54]},{"w":"pressurisation","c":[17]},{"w":"Pretoria","c":[31]},{"w":"printemps","c":[18]},{"w":"procureur","c":[42]},{"w":"procès","c":[42]},{"w":"programme","c":[59]},{"w":"Prokofiev","c":[10]},{"w":"prologue","c":[9]},{"w":"propriété","c":[44]},{"w":"prose","c":[62]},{"w":"proviseur","c":[68]},{"w":"prudence","c":[60]},{"w":"prune","c":[19,27]},{"w":"pruneau","c":[27]},{"w":"préfet","c":[59]},{"w":"préjudice","c":[42]},{"w":"préjugé","c":[60]},{"w":"prévision","c":[14]},{"w":"psyché","c":[49]},{"w":"Puccini","c":[10]},{"w":"puce","c":[40]},{"w":"puceron","c":[40]},{"w":"pudding","c":[54]},{"w":"pulsar","c":[15]},{"w":"punaise","c":[40]},{"w":"punition","c":[42,68]},{"w":"pupitre","c":[49]},{"w":"puzzle","c":[41]},{"w":"pylône","c":[5]},{"w":"pâtes","c":[56]},{"w":"pâtissier","c":[48]},{"w":"pâtisson","c":[24]},{"w":"pèche","c":[27]},{"w":"père","c":[23]},{"w":"pédagogue","c":[48]},{"w":"pédiatre","c":[48]},{"w":"pékinois","c":[1]},{"w":"pénalité","c":[42,64]},{"w":"péniche","c":[67]},{"w":"péninsule","c":[32]},{"w":"péridot","c":[33]},{"w":"périgée","c":[15]},{"w":"périmètre","c":[46]},{"w":"pétanque","c":[41,61]},{"w":"pétrin","c":[49]},{"w":"pétunia","c":[26]},{"w":"pôle","c":[14,15]},{"w":"Qatar","c":[30]},{"w":"quadrille","c":[21]},{"w":"quartz","c":[33]},{"w":"Queneau","c":[11]},{"w":"quiche","c":[56]},{"w":"quilles","c":[41]},{"w":"Quito","c":[31]},{"w":"Rabat","c":[31]},{"w":"raclette","c":[55,56]},{"w":"radian","c":[46]},{"w":"radiant","c":[15]},{"w":"radiateur","c":[66]},{"w":"rafting","c":[61]},{"w":"ragout","c":[56]},{"w":"raie","c":[4,57]},{"w":"ramequin","c":[65]},{"w":"rami","c":[41]},{"w":"ramoneur","c":[48]},{"w":"rampe","c":[9]},{"w":"rancoeur","c":[60]},{"w":"Rangoon","c":[31]},{"w":"Raphaël","c":[12]},{"w":"rat","c":[2]},{"w":"ratafia","c":[53]},{"w":"ratatouille","c":[56]},{"w":"rave","c":[24]},{"w":"Ravel","c":[10]},{"w":"ravin","c":[32]},{"w":"ravine","c":[32]},{"w":"rayon","c":[46]},{"w":"reblochon","c":[55]},{"w":"recours","c":[42]},{"w":"rectangle","c":[46]},{"w":"relaxe","c":[42,64]},{"w":"Rembrandt","c":[12]},{"w":"rempart","c":[6]},{"w":"remparts","c":[5]},{"w":"Renoir","c":[12]},{"w":"renoncule","c":[26]},{"w":"renvoi","c":[42,64,68]},{"w":"reporter","c":[48]},{"w":"requin","c":[4]},{"w":"requête","c":[64]},{"w":"ressort","c":[42,64]},{"w":"retouche","c":[37]},{"w":"retraite","c":[7]},{"w":"Rhin","c":[28]},{"w":"rhododendron","c":[26]},{"w":"rhubarbe","c":[27]},{"w":"rhum","c":[53]},{"w":"rhume","c":[45]},{"w":"Rhône","c":[28]},{"w":"Ribera","c":[12]},{"w":"rime","c":[62]},{"w":"rite","c":[43]},{"w":"rituel","c":[43]},{"w":"rivet","c":[58]},{"w":"rivière","c":[34]},{"w":"robe","c":[38]},{"w":"rock","c":[21]},{"w":"roman","c":[62]},{"w":"romancier","c":[62]},{"w":"roncier","c":[25]},{"w":"rondache","c":[8]},{"w":"rondeau","c":[62]},{"w":"Ronsard","c":[11]},{"w":"roquefort","c":[55]},{"w":"rosace","c":[6]},{"w":"roseau","c":[25]},{"w":"rossignol","c":[3]},{"w":"rosée","c":[47]},{"w":"rotation","c":[46]},{"w":"rotonde","c":[5,6]},{"w":"roue","c":[66]},{"w":"rouge","c":[19]},{"w":"rouille","c":[19]},{"w":"rouleau","c":[65]},{"w":"Rousseau","c":[11]},{"w":"roussette","c":[4]},{"w":"Rubens","c":[12]},{"w":"rudesse","c":[60]},{"w":"rugby","c":[61]},{"w":"rumba","c":[21]},{"w":"Russell","c":[13]},{"w":"Ryanair","c":[17]},{"w":"réacteur","c":[17]},{"w":"récif","c":[32]},{"w":"récit","c":[62]},{"w":"récitant","c":[9]},{"w":"rédaction","c":[68]},{"w":"réflexion","c":[60]},{"w":"référé","c":[64]},{"w":"réseau","c":[39]},{"w":"réservoir","c":[66]},{"w":"révision","c":[42]},{"w":"rêne","c":[22]},{"w":"rêve","c":[60]},{"w":"rôle","c":[9,63]},{"w":"rôti","c":[56]},{"w":"sabbat","c":[43]},{"w":"sablé","c":[54]},{"w":"sabre","c":[8]},{"w":"sacrifice","c":[43]},{"w":"Sade","c":[11]},{"w":"sagaie","c":[8]},{"w":"saladier","c":[65]},{"w":"salem","c":[43]},{"w":"Salieri","c":[10]},{"w":"salon","c":[44]},{"w":"salpêtre","c":[33]},{"w":"salsa","c":[21]},{"w":"salsifis","c":[24]},{"w":"samba","c":[21]},{"w":"sandale","c":[36]},{"w":"sanglier","c":[2]},{"w":"sansonnet","c":[3]},{"w":"santiag","c":[36]},{"w":"Santiago","c":[31]},{"w":"sardane","c":[21]},{"w":"sardine","c":[4]},{"w":"Sardou","c":[11]},{"w":"sarisse","c":[8]},{"w":"Sartre","c":[11]},{"w":"satire","c":[62]},{"w":"Saturne","c":[16]},{"w":"satyre","c":[20]},{"w":"sauge","c":[26]},{"w":"saule","c":[25]},{"w":"saumon","c":[4]},{"w":"saut","c":[22]},{"w":"sautoir","c":[34]},{"w":"sauvageon","c":[20]},{"w":"savate","c":[61]},{"w":"saxophone","c":[51]},{"w":"saynète","c":[9]},{"w":"scarabée","c":[40]},{"w":"Schubert","c":[10]},{"w":"Schumann","c":[10]},{"w":"scooter","c":[67]},{"w":"scorpion","c":[14]},{"w":"Scorsese","c":[13]},{"w":"scrabble","c":[41]},{"w":"scrutin","c":[59]},{"w":"section","c":[7]},{"w":"segment","c":[46]},{"w":"selle","c":[22]},{"w":"semaine","c":[18]},{"w":"sentence","c":[64]},{"w":"sentiment","c":[60]},{"w":"Seoul","c":[31]},{"w":"serin","c":[3]},{"w":"setter","c":[1]},{"w":"sida","c":[45]},{"w":"siege","c":[7]},{"w":"sifflet","c":[51]},{"w":"signe","c":[14]},{"w":"silence","c":[50]},{"w":"silice","c":[33]},{"w":"singe","c":[2]},{"w":"sinus","c":[46]},{"w":"sinusoïde","c":[46]},{"w":"sirex","c":[40]},{"w":"sirop","c":[52]},{"w":"Sisley","c":[12]},{"w":"site","c":[39]},{"w":"ski","c":[61]},{"w":"Slovaque","c":[29]},{"w":"slow","c":[21]},{"w":"smoking","c":[38]},{"w":"sofa","c":[49]},{"w":"Sofia","c":[31]},{"w":"sole","c":[57]},{"w":"Soleil","c":[16]},{"w":"solfège","c":[50]},{"w":"solitaire","c":[34]},{"w":"solstice","c":[18]},{"w":"sombrero","c":[51]},{"w":"sommet","c":[46]},{"w":"sonate","c":[50]},{"w":"soprano","c":[50]},{"w":"sort","c":[43]},{"w":"sortilège","c":[43]},{"w":"Soudan","c":[30]},{"w":"souffle","c":[56]},{"w":"souffleur","c":[63]},{"w":"soulier","c":[36]},{"w":"soupape","c":[66]},{"w":"soupe","c":[56]},{"w":"souvenir","c":[60]},{"w":"spatule","c":[3,65]},{"w":"Spielberg","c":[13]},{"w":"spirale","c":[46]},{"w":"squelette","c":[0]},{"w":"starter","c":[66]},{"w":"Stendhal","c":[11]},{"w":"Sternberg","c":[13]},{"w":"Stockholm","c":[31]},{"w":"store","c":[44]},{"w":"stratégie","c":[7]},{"w":"strophe","c":[62]},{"w":"stupidité","c":[60]},{"w":"stéradian","c":[46]},{"w":"substitut","c":[42,64]},{"w":"succube","c":[20]},{"w":"sucette","c":[54]},{"w":"Suisse","c":[30]},{"w":"Sully","c":[10]},{"w":"surf","c":[61]},{"w":"surface","c":[46]},{"w":"surfil","c":[37]},{"w":"surpiqure","c":[37]},{"w":"sursis","c":[42]},{"w":"sycomore","c":[25]},{"w":"sylphe","c":[20]},{"w":"Sylvain","c":[20]},{"w":"symétrie","c":[46]},{"w":"système","c":[39]},{"w":"sécante","c":[46]},{"w":"sédiment","c":[32]},{"w":"Ségur","c":[11]},{"w":"sénat","c":[59]},{"w":"sénateur","c":[59]},{"w":"Sénégal","c":[30]},{"w":"table","c":[49]},{"w":"tactique","c":[7]},{"w":"tae won do","c":[61]},{"w":"taekwondo","c":[61]},{"w":"tailleur","c":[48]},{"w":"talisman","c":[43]},{"w":"taloche","c":[58]},{"w":"talon","c":[0]},{"w":"tambour","c":[51]},{"w":"tambourin","c":[51]},{"w":"tango","c":[21]},{"w":"tante","c":[23]},{"w":"Tanzanie","c":[30]},{"w":"taon","c":[40]},{"w":"tapir","c":[2]},{"w":"tapissier","c":[48]},{"w":"Tarantino","c":[13]},{"w":"tarentule","c":[40]},{"w":"tarot","c":[14]},{"w":"tarte","c":[54]},{"w":"tartiflette","c":[56]},{"w":"tasse","c":[65]},{"w":"Tati","c":[13]},{"w":"taupe","c":[2]},{"w":"taureau","c":[2,14]},{"w":"teck","c":[25]},{"w":"teckel","c":[1]},{"w":"teigne","c":[40]},{"w":"tempête","c":[47]},{"w":"tenaille","c":[58]},{"w":"tendresse","c":[60]},{"w":"tennis","c":[36]},{"w":"termite","c":[40]},{"w":"Terre","c":[16]},{"w":"thermidor","c":[18]},{"w":"thon","c":[4,57]},{"w":"thuya","c":[26]},{"w":"thème","c":[14]},{"w":"thèse","c":[68]},{"w":"thé","c":[52]},{"w":"Tibet","c":[30]},{"w":"tierce","c":[22,50]},{"w":"tilleul","c":[52]},{"w":"tipule","c":[40]},{"w":"tique","c":[40]},{"w":"tirade","c":[62]},{"w":"tisane","c":[52]},{"w":"tomate","c":[27]},{"w":"tomme","c":[55]},{"w":"toque","c":[35]},{"w":"Torelli","c":[10]},{"w":"torpille","c":[4,8]},{"w":"tour","c":[43]},{"w":"tourneur","c":[48]},{"w":"tourte","c":[56]},{"w":"tragédie","c":[62,63]},{"w":"train","c":[67]},{"w":"trainée","c":[17]},{"w":"tramway","c":[67]},{"w":"transat","c":[49]},{"w":"Transavia","c":[17]},{"w":"transfert","c":[39]},{"w":"trappe","c":[9]},{"w":"trapèze","c":[46]},{"w":"travée","c":[6]},{"w":"triangle","c":[46,51]},{"w":"Tricorne","c":[35]},{"w":"tricot","c":[38]},{"w":"tricycle","c":[67]},{"w":"trigone","c":[14]},{"w":"trilogie","c":[62]},{"w":"Tripoli","c":[31]},{"w":"Triton","c":[16]},{"w":"trolley","c":[67]},{"w":"trombe","c":[47]},{"w":"tromblon","c":[8]},{"w":"trombone","c":[51]},{"w":"tropique","c":[15]},{"w":"trot","c":[22]},{"w":"truie","c":[2]},{"w":"truite","c":[4]},{"w":"trèfle","c":[26]},{"w":"trébuchet","c":[8]},{"w":"trémolo","c":[50]},{"w":"trépied","c":[49]},{"w":"tuberculose","c":[45]},{"w":"tunique","c":[38]},{"w":"Tunis","c":[31]},{"w":"turbo","c":[66]},{"w":"turbot","c":[4,57]},{"w":"Turner","c":[12]},{"w":"Turque","c":[29]},{"w":"Turquie","c":[30]},{"w":"turquoise","c":[19,33]},{"w":"tympan","c":[6]},{"w":"typhoïde","c":[45]},{"w":"tâche","c":[39]},{"w":"témoin","c":[42]},{"w":"ténor","c":[50]},{"w":"tête","c":[0]},{"w":"tôlier","c":[48]},{"w":"unisson","c":[50]},{"w":"univers","c":[15]},{"w":"Uranus","c":[16]},{"w":"urne","c":[59]},{"w":"vache","c":[2]},{"w":"vacher","c":[48]},{"w":"vallon","c":[32]},{"w":"vallée","c":[32]},{"w":"valse","c":[21]},{"w":"vampire","c":[20]},{"w":"vanille","c":[19]},{"w":"vanneau","c":[3]},{"w":"Vanuatu","c":[30]},{"w":"variation","c":[50]},{"w":"variole","c":[45]},{"w":"vasistas","c":[5]},{"w":"vecteur","c":[46]},{"w":"veilleuse","c":[66]},{"w":"vendeur","c":[48]},{"w":"vendredi","c":[18]},{"w":"ventre","c":[0]},{"w":"ventôse","c":[18]},{"w":"Verdi","c":[10]},{"w":"verglas","c":[47]},{"w":"Vermeer","c":[12]},{"w":"vermeil","c":[19]},{"w":"vermillon","c":[19]},{"w":"Verne","c":[11]},{"w":"Verneuil","c":[13]},{"w":"verre","c":[65]},{"w":"verrière","c":[6]},{"w":"versant","c":[32]},{"w":"verseau","c":[14]},{"w":"vert","c":[19]},{"w":"verticale","c":[46]},{"w":"vertèbre","c":[0]},{"w":"verveine","c":[52]},{"w":"veste","c":[38]},{"w":"veuvage","c":[23]},{"w":"vibrato","c":[50]},{"w":"victoire","c":[7]},{"w":"Vidor","c":[13]},{"w":"vielle","c":[51]},{"w":"Vienne","c":[31]},{"w":"vierge","c":[14]},{"w":"vigne","c":[25]},{"w":"villa","c":[44]},{"w":"Villon","c":[11]},{"w":"vin","c":[53]},{"w":"Vinci","c":[12]},{"w":"violet","c":[19]},{"w":"violette","c":[26]},{"w":"virus","c":[39]},{"w":"vis","c":[58]},{"w":"visage","c":[0]},{"w":"Visconti","c":[13]},{"w":"viscère","c":[0]},{"w":"vitrail","c":[6]},{"w":"vitre","c":[66]},{"w":"vitrine","c":[49]},{"w":"Vivaldi","c":[10]},{"w":"vodka","c":[53]},{"w":"voiture","c":[66,67]},{"w":"volant","c":[66]},{"w":"volets","c":[17]},{"w":"volley","c":[61]},{"w":"volume","c":[46,50]},{"w":"vote","c":[59]},{"w":"vrille","c":[58]},{"w":"vélo","c":[61,67]},{"w":"Vénus","c":[16]},{"w":"véranda","c":[44]},{"w":"Wagner","c":[10]},{"w":"Walsh","c":[13]},{"w":"web","c":[39]},{"w":"Weser","c":[28]},{"w":"whisky","c":[53]},{"w":"wicca","c":[43]},{"w":"Wilder","c":[13]},{"w":"Yang Tsé","c":[28]},{"w":"Yemen","c":[30]},{"w":"yorkshire","c":[1]},{"w":"yoyo","c":[41]},{"w":"Zambèze","c":[28]},{"w":"zinnia","c":[26]},{"w":"zircon","c":[33]},{"w":"zodiaque","c":[14]},{"w":"Zola","c":[11]},{"w":"zénith","c":[15]},{"w":"âne","c":[2]},{"w":"éboueur","c":[48]},{"w":"ébène","c":[25]},{"w":"écharpe","c":[38]},{"w":"échassier","c":[3]},{"w":"échelon","c":[7]},{"w":"éclair","c":[47]},{"w":"éclipse","c":[14]},{"w":"école","c":[68]},{"w":"écrivain","c":[62]},{"w":"écru","c":[19]},{"w":"écureuil","c":[2]},{"w":"écurie","c":[5]},{"w":"éducateur","c":[48]},{"w":"églantine","c":[26]},{"w":"églefin","c":[4]},{"w":"élixir","c":[43]},{"w":"élève","c":[68]},{"w":"émeraude","c":[33]},{"w":"émeu","c":[3]},{"w":"épagneul","c":[1]},{"w":"épaule","c":[0]},{"w":"éperon","c":[22]},{"w":"éphémère","c":[40]},{"w":"épicier","c":[48]},{"w":"épieu","c":[8]},{"w":"épinard","c":[24]},{"w":"épingle","c":[37]},{"w":"épinoche","c":[57]},{"w":"épouse","c":[23]},{"w":"épreuve","c":[68]},{"w":"épée","c":[8]},{"w":"équateur","c":[15]},{"w":"équinoxe","c":[18]},{"w":"étable","c":[5]},{"w":"établi","c":[49,58]},{"w":"étage","c":[44]},{"w":"étagère","c":[49]},{"w":"étau","c":[58]},{"w":"études","c":[68]},{"w":"été","c":[18]}]};
+
+let mode = 1, order = 'alea', pool = [], idx = 0;
+const $ = id => document.getElementById(id);
+const imgCache = {}; // key word|catIdx -> {url,page} or null
+
+/* ---------- home ---------- */
+function setMode(m){
+  mode = m;
+  $('mode1btn').classList.toggle('selected', m===1);
+  $('mode2btn').classList.toggle('selected', m===2);
+}
+function setOrder(o){
+  order = o;
+  $('ordAlea').classList.toggle('on', o==='alea');
+  $('ordAlpha').classList.toggle('on', o==='alpha');
+}
+function buildCats(){
+  const g = $('catgrid');
+  DATA.cats.forEach((c,i)=>{
+    const lab = document.createElement('label');
+    lab.className = 'catitem';
+    const n = DATA.words.filter(w=>w.c.includes(i)).length;
+    lab.innerHTML = `<input type="checkbox" checked data-i="${i}" onchange="updateCount()"> ${c.l} <span style="margin-left:auto;color:#9db4cf;font-size:12px">${n}</span>`;
+    g.appendChild(lab);
+  });
+  updateCount();
+}
+function allCats(v){
+  document.querySelectorAll('#catgrid input').forEach(cb=>cb.checked=v);
+  updateCount();
+}
+function selectedCats(){
+  return [...document.querySelectorAll('#catgrid input')].filter(cb=>cb.checked).map(cb=>+cb.dataset.i);
+}
+function updateCount(){
+  const sel = new Set(selectedCats());
+  const n = DATA.words.filter(w=>w.c.some(ci=>sel.has(ci))).length;
+  $('selcount').textContent = n + ' mots sélectionnés';
+}
+function startSession(){
+  const sel = new Set(selectedCats());
+  pool = DATA.words.filter(w=>w.c.some(ci=>sel.has(ci)));
+  if(!pool.length){ alert('Sélectionnez au moins une catégorie.'); return; }
+  if(order==='alea') shuffle(pool); else pool.sort((a,b)=>a.w.localeCompare(b.w,'fr'));
+  idx = 0;
+  $('home').classList.remove('active');
+  $('play').classList.add('active');
+  render();
+  window.scrollTo(0,0);
+}
+function goHome(){
+  $('play').classList.remove('active');
+  $('home').classList.add('active');
+}
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } }
+function shuffleNow(){ shuffle(pool); idx=0; render(); }
+
+/* ---------- card ---------- */
+function nav(d){
+  idx = (idx + d + pool.length) % pool.length;
+  render();
+}
+function render(){
+  const item = pool[idx];
+  $('counter').textContent = (idx+1) + ' / ' + pool.length;
+  $('word').textContent = item.w;
+  const box = $('meanings');
+  box.innerHTML = '';
+  const multi = item.c.length > 1;
+  $('word').innerHTML = escapeHtml(item.w) + (multi ? ' <span class="badge">' + item.c.length + ' sens</span>' : '');
+  item.c.forEach(ci=>{
+    const cat = DATA.cats[ci];
+    const div = document.createElement('div');
+    div.className = 'meaning';
+    const labHtml = mode===2
+      ? `<div class="catlab hiddenlab" data-label="${escapeHtml(cat.l)}">❓ Catégorie cachée</div>`
+      : `<div class="catlab">${escapeHtml(cat.l)}</div>`;
+    div.innerHTML = `${labHtml}
+      <div class="imgwrap" id="iw${ci}">
+        <div class="status">Chargement…</div>
+        ${mode===2 ? '<div class="veil" id="veil'+ci+'">❓</div>' : ''}
+      </div>`;
+    box.appendChild(div);
+    loadImage(item, ci);
+  });
+  const rb = $('revealBtn'), nb = $('nextBtn');
+  revealed = false;
+  if(mode===2){
+    rb.style.display=''; rb.textContent='👁 Révéler';
+    nb.style.display='none';
+  } else {
+    rb.style.display='none';
+    nb.style.display='';
+  }
+  window.scrollTo(0,0);
+}
+let revealed = false;
+function revealOrNext(){
+  if(mode!==2) return;
+  if(revealed){ nav(1); return; }
+  document.querySelectorAll('.veil').forEach(v=>v.remove());
+  document.querySelectorAll('.catlab.hiddenlab').forEach(el=>{
+    el.textContent = el.dataset.label;
+    el.classList.remove('hiddenlab');
+  });
+  revealed = true;
+  $('revealBtn').textContent = 'Suivant ▶';
+}
+function escapeHtml(s){ return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ---------- images (Wikipédia) ---------- */
+const BANNED = /disambig|question_book|wiki.?letter|logo|icon|emblem_important|red_pog|ambox|padlock|edit-clear|no_image|placeholder|open_access|wiktionary|commons-logo/i;
+
+function cacheKey(item,ci){ return item.w.toLowerCase()+'|'+ci; }
+
+async function loadImage(item, ci){
+  const key = cacheKey(item,ci);
+  const holder = document.getElementById('iw'+ci);
+  if(!holder) return;
+  let res = imgCache[key];
+  if(res === undefined){
+    try { res = await findImage(item.w, DATA.cats[ci].h); }
+    catch(e){ res = null; }
+    imgCache[key] = res;
+    try { localStorage.setItem('bam_'+key, JSON.stringify(res)); } catch(e){}
+  }
+  // still the same card?
+  if(pool[idx] !== item) return;
+  const cur = document.getElementById('iw'+ci);
+  if(!cur) return;
+  const veil = cur.querySelector('.veil');
+  if(res && res.url){
+    cur.querySelector('.status')?.remove();
+    const img = new Image();
+    img.referrerPolicy = 'no-referrer';
+    img.onload = ()=>{};
+    img.onerror = ()=>{ const s=document.createElement('div'); s.className='status'; s.textContent='Image indisponible'; cur.prepend(s); img.remove(); };
+    img.src = res.url;
+    cur.prepend(img);
+  } else {
+    const s = cur.querySelector('.status');
+    if(s) s.textContent = navigator.onLine === false ? 'Hors ligne — image indisponible' : 'Aucune image trouvée';
+  }
+}
+
+async function findImage(word, hint){
+  const cached = readLocal(word, hint);
+  if(cached !== undefined) return cached;
+  // 1. French Wikipedia search: word + category hint
+  let r = await wikiSearch('fr.wikipedia.org', word + ' ' + hint);
+  // 2. fallback: word alone
+  if(!r) r = await wikiSearch('fr.wikipedia.org', word);
+  // 3. fallback: Wikimedia Commons file search
+  if(!r) r = await commonsSearch(word + ' ' + hint.split(' ')[0]);
+  return r;
+}
+function readLocal(word, hint){
+  return undefined; // localStorage read handled via imgCache preload below
+}
+async function wikiSearch(host, q){
+  const url = 'https://' + host + '/w/api.php?action=query&generator=search'
+    + '&gsrsearch=' + encodeURIComponent(q) + '&gsrlimit=6&gsrnamespace=0'
+    + '&prop=pageimages&piprop=thumbnail&pithumbsize=560&format=json&origin=*';
+  const j = await fetchJson(url);
+  const pages = j && j.query && j.query.pages ? Object.values(j.query.pages) : [];
+  pages.sort((a,b)=>(a.index||99)-(b.index||99));
+  for(const p of pages){
+    if(p.thumbnail && p.thumbnail.source && !BANNED.test(p.thumbnail.source)){
+      return { url: p.thumbnail.source, title: p.title };
+    }
+  }
+  return null;
+}
+async function commonsSearch(q){
+  const url = 'https://commons.wikimedia.org/w/api.php?action=query&generator=search'
+    + '&gsrsearch=' + encodeURIComponent('filetype:bitmap ' + q) + '&gsrlimit=6&gsrnamespace=6'
+    + '&prop=imageinfo&iiprop=url&iiurlwidth=560&format=json&origin=*';
+  const j = await fetchJson(url);
+  const pages = j && j.query && j.query.pages ? Object.values(j.query.pages) : [];
+  pages.sort((a,b)=>(a.index||99)-(b.index||99));
+  for(const p of pages){
+    const ii = p.imageinfo && p.imageinfo[0];
+    const u = ii && (ii.thumburl || ii.url);
+    if(u && !BANNED.test(u)) return { url: u, title: p.title };
+  }
+  return null;
+}
+function fetchJson(url){
+  return new Promise((resolve,reject)=>{
+    const ctl = new AbortController();
+    const t = setTimeout(()=>{ ctl.abort(); reject(new Error('timeout')); }, 12000);
+    fetch(url, {signal: ctl.signal})
+      .then(r=>r.json()).then(j=>{ clearTimeout(t); resolve(j); })
+      .catch(e=>{ clearTimeout(t); reject(e); });
+  });
+}
+
+/* preload persisted cache */
+(function(){
+  try{
+    for(let i=0;i<localStorage.length;i++){
+      const k = localStorage.key(i);
+      if(k && k.startsWith('bam_')){
+        try{ imgCache[k.slice(4)] = JSON.parse(localStorage.getItem(k)); }catch(e){}
+      }
+    }
+  }catch(e){}
+})();
+
+/* swipe navigation */
+(function(){
+  let x0=null,y0=null;
+  document.addEventListener('touchstart',e=>{ if($('play').classList.contains('active')){ x0=e.touches[0].clientX; y0=e.touches[0].clientY; } },{passive:true});
+  document.addEventListener('touchend',e=>{
+    if(x0===null) return;
+    const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
+    x0=null;
+    if(Math.abs(dx)>70 && Math.abs(dx)>2*Math.abs(dy)){
+      const d = dx<0?1:-1;
+      if(mode===2 && !revealed && d===1) return; // pas de "suivant" avant révélation
+      nav(d);
+    }
+  },{passive:true});
+})();
+
+/* keyboard (desktop) */
+document.addEventListener('keydown',e=>{
+  if(!$('play').classList.contains('active')) return;
+  if(e.key==='ArrowRight'){
+    if(mode===2 && !revealed) revealOrNext(); // révèle d'abord
+    else nav(1);
+  }
+  else if(e.key==='ArrowLeft') nav(-1);
+  else if(e.key===' '||e.key==='Enter'){ if(mode===2){ e.preventDefault(); revealOrNext(); } }
+});
+
+buildCats();
+</script>
+</body>
+</html>
