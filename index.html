@@ -96,7 +96,24 @@ select{
 .catgrid{display:grid;grid-template-columns:1fr;gap:6px;max-height:38dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:2px;}
 .catitem{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.07);border-radius:10px;padding:10px 12px;font-size:14.5px;cursor:pointer;}
 .catitem input{width:19px;height:19px;accent-color:var(--gold);}
-.smallrow{display:flex;gap:8px;margin-bottom:10px;}
+.catitem .qm{
+  display:none;width:19px;height:19px;border-radius:5px;flex:none;
+  background:rgba(232,163,61,.25);border:1.5px solid var(--gold);color:var(--gold);
+  font-size:13px;font-weight:800;align-items:center;justify-content:center;line-height:1;
+}
+.catgrid.mystery input{display:none;}
+.catgrid.mystery .qm{display:inline-flex;}
+.smallrow{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center;}
+.randpick{
+  display:flex;gap:6px;align-items:center;margin-left:auto;
+  background:rgba(232,163,61,.18);border:1px solid rgba(232,163,61,.35);
+  border-radius:999px;padding:4px 5px;
+}
+.randpick input{
+  width:54px;font-size:16px;text-align:center;padding:7px 4px;border-radius:999px;border:0;
+  background:var(--card);color:var(--ink);
+}
+.smallbtn.gold{background:var(--gold);color:#132437;font-weight:700;}
 .smallbtn{border:0;background:rgba(255,255,255,.15);color:#fff;border-radius:999px;padding:8px 13px;font-size:13px;cursor:pointer;}
 .badge{background:var(--accent2);color:#fff;border-radius:999px;font-size:11.5px;font-weight:700;padding:3px 10px;margin-left:8px;vertical-align:middle;}
 </style>
@@ -118,18 +135,14 @@ select{
   </div>
 
   <div class="panel">
-    <h3>Ordre</h3>
-    <div class="row">
-      <button class="chip on" id="ordAlea" onclick="setOrder('alea')">🎲 Aléatoire</button>
-      <button class="chip" id="ordAlpha" onclick="setOrder('alpha')">🔤 Alphabétique</button>
-    </div>
-  </div>
-
-  <div class="panel">
     <h3>Catégories</h3>
     <div class="smallrow">
       <button class="smallbtn" onclick="allCats(true)">Tout cocher</button>
       <button class="smallbtn" onclick="allCats(false)">Tout décocher</button>
+      <span class="randpick">
+        <button class="smallbtn gold" onclick="randomCats()">🎲 au hasard</button>
+        <input type="number" id="nbRand" min="1" max="69" value="3" inputmode="numeric" oninput="randomCats()">
+      </span>
     </div>
     <div class="catgrid" id="catgrid"></div>
     <div class="selcount" id="selcount"></div>
@@ -171,24 +184,36 @@ function setMode(m){
   $('mode1btn').classList.toggle('selected', m===1);
   $('mode2btn').classList.toggle('selected', m===2);
 }
-function setOrder(o){
-  order = o;
-  $('ordAlea').classList.toggle('on', o==='alea');
-  $('ordAlpha').classList.toggle('on', o==='alpha');
-}
 function buildCats(){
   const g = $('catgrid');
   DATA.cats.forEach((c,i)=>{
     const lab = document.createElement('label');
     lab.className = 'catitem';
     const n = DATA.words.filter(w=>w.c.includes(i)).length;
-    lab.innerHTML = `<input type="checkbox" checked data-i="${i}" onchange="updateCount()"> ${c.l} <span style="margin-left:auto;color:#9db4cf;font-size:12px">${n}</span>`;
+    lab.innerHTML = `<input type="checkbox" checked data-i="${i}" onchange="catToggled()"><span class="qm">?</span> ${c.l} <span style="margin-left:auto;color:#9db4cf;font-size:12px">${n}</span>`;
     g.appendChild(lab);
   });
   updateCount();
 }
 function allCats(v){
   document.querySelectorAll('#catgrid input').forEach(cb=>cb.checked=v);
+  $('catgrid').classList.remove('mystery');
+  updateCount();
+}
+function catToggled(){
+  $('catgrid').classList.remove('mystery'); // édition manuelle : réaffiche les coches
+  updateCount();
+}
+function randomCats(){
+  let n = parseInt($('nbRand').value, 10);
+  if(isNaN(n)) return;           // champ vide pendant la saisie : ne rien faire
+  if(n < 1) n = 1;
+  if(n > DATA.cats.length){ n = DATA.cats.length; $('nbRand').value = n; }
+  const idxs = DATA.cats.map((_,i)=>i);
+  shuffle(idxs);
+  const keep = new Set(idxs.slice(0, n));
+  document.querySelectorAll('#catgrid input').forEach(cb=>{ cb.checked = keep.has(+cb.dataset.i); });
+  $('catgrid').classList.add('mystery'); // sélection secrète
   updateCount();
 }
 function selectedCats(){
@@ -203,7 +228,7 @@ function startSession(){
   const sel = new Set(selectedCats());
   pool = DATA.words.filter(w=>w.c.some(ci=>sel.has(ci)));
   if(!pool.length){ alert('Sélectionnez au moins une catégorie.'); return; }
-  if(order==='alea') shuffle(pool); else pool.sort((a,b)=>a.w.localeCompare(b.w,'fr'));
+  shuffle(pool);
   idx = 0;
   $('home').classList.remove('active');
   $('play').classList.add('active');
