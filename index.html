@@ -139,6 +139,19 @@ select{
   font-size:22px;font-weight:800;color:#fff;padding:10px 12px;border-radius:12px;
   text-align:center;text-shadow:0 1px 3px rgba(0,0,0,.45);
 }
+.diffbtn{
+  border:0;border-radius:999px;padding:7px 14px;font-size:13.5px;cursor:pointer;
+  background:#eef2f7;color:#5b7089;font-weight:700;
+}
+.diffbtn.on{background:var(--gold);color:#132437;}
+.diffrow{text-align:center;margin:0 0 10px;}
+.revlist{display:grid;gap:4px;max-height:62dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:2px;}
+.revitem{
+  display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.07);
+  border-radius:8px;padding:8px 12px;font-size:15px;cursor:pointer;
+}
+.revitem input{width:19px;height:19px;accent-color:var(--gold);flex:none;}
+.revitem.on{background:rgba(232,163,61,.22);}
 </style>
 </head>
 <body>
@@ -154,7 +167,13 @@ select{
       <span class="ico">🙈</span><b>Révélation</b>
     </button>
     <button class="mode-btn" id="mode3btn" onclick="setMode(3)">
-      <span class="ico">🔍</span><b>Exploration</b>
+      <span class="ico">🔍</span><b>Explorer - tout</b>
+    </button>
+    <button class="mode-btn" id="mode4btn" onclick="setMode(4)">
+      <span class="ico">🔥</span><b>Explorer - difficile</b>
+    </button>
+    <button class="mode-btn" id="mode5btn" onclick="setMode(5)">
+      <span class="ico">📋</span><b>Révision générale</b>
     </button>
   </div>
 
@@ -177,7 +196,16 @@ select{
     <div class="exsug" id="exSug"></div>
     <div class="card excard" id="exCard" style="display:none">
       <div class="word" id="exWord"></div>
+      <div class="diffrow" id="exDiffrow"></div>
       <div class="meanings" id="exMeanings"></div>
+    </div>
+  </div>
+
+  <div id="revpanel" style="display:none">
+    <div class="panel">
+      <h3>Révision générale — marquez les mots difficiles</h3>
+      <div class="selcount" id="revcount"></div>
+      <div class="revlist" id="revlist"></div>
     </div>
   </div>
 
@@ -194,6 +222,7 @@ select{
   </div>
   <div class="card">
     <div class="word" id="word"></div>
+    <div class="diffrow" id="diffrow"></div>
     <div class="meanings" id="meanings"></div>
   </div>
   <div class="controls">
@@ -215,12 +244,73 @@ const imgCache = {}; // key word|catIdx -> {url,page} or null
 /* ---------- home ---------- */
 function setMode(m){
   mode = m;
-  [1,2,3].forEach(k=>$('mode'+k+'btn').classList.toggle('selected', m===k));
-  const ex = m===3;
-  $('catpanel').style.display = ex ? 'none' : '';
-  $('startBtn').style.display = ex ? 'none' : '';
+  [1,2,3,4,5].forEach(k=>$('mode'+k+'btn').classList.toggle('selected', m===k));
+  const ex = m===3 || m===4;
+  const play = m===1 || m===2;
+  $('catpanel').style.display = play ? '' : 'none';
+  $('startBtn').style.display = play ? '' : 'none';
   $('expanel').style.display = ex ? '' : 'none';
-  if(ex) $('exInput').focus();
+  $('revpanel').style.display = m===5 ? '' : 'none';
+  if(ex){
+    $('exInput').value=''; $('exSug').innerHTML=''; $('exCard').style.display='none';
+    exSearch();
+    $('exInput').focus();
+  }
+  if(m===5) buildReview();
+}
+
+/* ---------- mots difficiles ---------- */
+let diffSet = new Set();
+try{ diffSet = new Set(JSON.parse(localStorage.getItem('bam_diff')||'[]')); }catch(e){}
+function saveDiff(){ try{ localStorage.setItem('bam_diff', JSON.stringify([...diffSet])); }catch(e){} }
+function isDiff(w){ return diffSet.has(w.toLowerCase()); }
+function toggleDiff(w){
+  const k = w.toLowerCase();
+  if(diffSet.has(k)) diffSet.delete(k); else diffSet.add(k);
+  saveDiff();
+  document.querySelectorAll('[data-diff]').forEach(el=>{ if(el.getAttribute('data-diff')===k) paintDiff(el, k); });
+  updateRevCount();
+}
+function paintDiff(el, k){
+  const on = diffSet.has(k);
+  if(el.tagName === 'INPUT'){ el.checked = on; el.closest('.revitem')?.classList.toggle('on', on); return; }
+  el.classList.toggle('on', on);
+  el.textContent = on ? '★ Difficile' : '☆ Marquer comme difficile';
+}
+function diffBtn(w){
+  const b = document.createElement('button');
+  b.className = 'diffbtn';
+  b.setAttribute('data-diff', w.toLowerCase());
+  b.onclick = e=>{ e.stopPropagation(); toggleDiff(w); };
+  paintDiff(b, w.toLowerCase());
+  return b;
+}
+let revBuilt = false;
+function buildReview(){
+  updateRevCount();
+  if(revBuilt) return;
+  revBuilt = true;
+  const frag = document.createDocumentFragment();
+  [...DATA.words].sort((a,b)=>a.w.localeCompare(b.w,'fr')).forEach(w=>{
+    const k = w.w.toLowerCase();
+    const lab = document.createElement('label');
+    lab.className = 'revitem' + (diffSet.has(k) ? ' on' : '');
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = diffSet.has(k);
+    cb.setAttribute('data-diff', k);
+    cb.onchange = ()=>toggleDiff(w.w);
+    lab.appendChild(cb);
+    const sp = document.createElement('span');
+    sp.textContent = w.w;
+    lab.appendChild(sp);
+    frag.appendChild(lab);
+  });
+  $('revlist').appendChild(frag);
+}
+function updateRevCount(){
+  const el = $('revcount');
+  if(el) el.textContent = diffSet.size + (diffSet.size > 1 ? ' mots difficiles' : ' mot difficile');
 }
 function buildCats(){
   const g = $('catgrid');
@@ -288,15 +378,36 @@ function wordBg(w){
   }).join(', ');
   return 'linear-gradient(135deg, ' + stops + ')';
 }
+function exWords(){
+  return mode===4 ? DATA.words.filter(w=>isDiff(w.w)) : DATA.words;
+}
 function exSearch(){
   const q = norm($('exInput').value.trim());
   const sug = $('exSug');
   sug.innerHTML = '';
   $('exCard').style.display = 'none';
-  if(!q) return;
+  const src = exWords();
+  if(!q){
+    if(mode===4){
+      if(!src.length){
+        sug.innerHTML = '<span class="exnone">Aucun mot difficile pour l\'instant. Marquez-en avec ☆ ou via « Révision générale ».</span>';
+        return;
+      }
+      src.forEach(w=>{
+        const b = document.createElement('button');
+        b.style.background = wordBg(w);
+        b.textContent = w.w;
+        b.onclick = ()=>{ $('exInput').value = w.w; exShow(w); };
+        sug.appendChild(b);
+      });
+    }
+    return;
+  }
   // catégories correspondantes
   const catMatches = [];
-  DATA.cats.forEach((c,i)=>{ if(norm(c.l).includes(q)) catMatches.push(i); });
+  DATA.cats.forEach((c,i)=>{
+    if(norm(c.l).includes(q) && (mode!==4 || src.some(w=>w.c.includes(i)))) catMatches.push(i);
+  });
   catMatches.slice(0,8).forEach(ci=>{
     const b = document.createElement('button');
     b.className = 'excatbtn';
@@ -307,14 +418,14 @@ function exSearch(){
   });
   // mots correspondants
   const starts = [], contains = [];
-  for(const w of DATA.words){
+  for(const w of src){
     const n = norm(w.w);
     if(n.startsWith(q)) starts.push(w);
     else if(n.includes(q)) contains.push(w);
   }
   const list = starts.concat(contains).slice(0, 24);
   if(!list.length && !catMatches.length){
-    sug.innerHTML = '<span class="exnone">Aucun mot ni catégorie ne correspond.</span>';
+    sug.innerHTML = '<span class="exnone">' + (mode===4 ? 'Aucun mot difficile ne correspond.' : 'Aucun mot ni catégorie ne correspond.') + '</span>';
     return;
   }
   list.forEach(w=>{
@@ -347,6 +458,9 @@ function exShow(item, keepSug){
   const multi = item.c.length > 1;
   $('exWord').innerHTML = '<span class="wordchip" style="background:' + wordBg(item) + '">' + escapeHtml(item.w) + '</span>'
     + (multi ? ' <span class="badge">' + item.c.length + ' sens</span>' : '');
+  const edr = $('exDiffrow');
+  edr.innerHTML = '';
+  edr.appendChild(diffBtn(item.w));
   const box = $('exMeanings');
   box.innerHTML = '';
   item.c.forEach(ci=>{
@@ -359,7 +473,7 @@ function exShowCategory(ci, keepSug){
   if(!keepSug) $('exSug').innerHTML = '';
   $('exCard').style.display = '';
   currentCard = 'cat:' + ci;
-  const words = DATA.words.filter(w=>w.c.includes(ci));
+  const words = exWords().filter(w=>w.c.includes(ci));
   $('exWord').innerHTML = '<span class="wordchip" style="background:' + catColor(ci) + '">📁 ' + escapeHtml(DATA.cats[ci].l) + '</span>'
     + ' <span class="badge">' + words.length + ' mots</span>';
   const box = $('exMeanings');
@@ -372,6 +486,10 @@ function exShowCategory(ci, keepSug){
     t.style.background = wordBg(w);
     t.textContent = w.w;
     wrap.appendChild(t);
+    const dr = document.createElement('div');
+    dr.className = 'diffrow';
+    dr.appendChild(diffBtn(w.w));
+    wrap.appendChild(dr);
     // sens dans la catégorie consultée : image seule, sans rappeler la catégorie
     const main = document.createElement('div');
     main.className = 'meaning';
@@ -419,6 +537,9 @@ function render(){
   box.innerHTML = '';
   const multi = item.c.length > 1;
   $('word').innerHTML = escapeHtml(item.w) + (multi ? ' <span class="badge">' + item.c.length + ' sens</span>' : '');
+  const dr = $('diffrow');
+  dr.innerHTML = '';
+  dr.appendChild(diffBtn(item.w));
   item.c.forEach(ci=>{
     const cat = DATA.cats[ci];
     const div = document.createElement('div');
