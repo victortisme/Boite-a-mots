@@ -210,6 +210,22 @@ select{
   </div>
 
   <button class="start" id="startBtn" onclick="startSession()">Commencer ➜</button>
+
+  <div class="panel" id="syncpanel">
+    <h3>☁️ Mots difficiles — synchronisation</h3>
+    <div class="selcount" id="syncstatus">Chargement…</div>
+    <div id="syncsetup" style="display:none;margin-top:8px">
+      <input class="exsearch" id="ghtoken" type="password" placeholder="Jeton GitHub (fine-grained)" autocomplete="off">
+      <button class="smallbtn gold" onclick="saveGhToken()">Enregistrer le jeton</button>
+      <p class="foot" style="text-align:left;margin-top:8px">
+        GitHub ▸ Settings ▸ Developer settings ▸ Personal access tokens ▸ Fine-grained tokens ▸ Generate new token.
+        Repository access : « Only select repositories » ▸ Boite-a-mots. Permissions ▸ Contents : Read and write.
+        Le jeton reste uniquement sur cet appareil.
+      </p>
+    </div>
+    <button class="smallbtn" style="margin-top:8px" onclick="toggleSyncSetup()">Configurer sur cet appareil</button>
+  </div>
+
   <p class="foot">Images : Wikipédia / Wikimedia Commons (connexion Internet requise)</p>
 </div>
 
@@ -270,6 +286,90 @@ function toggleDiff(w){
   saveDiff();
   document.querySelectorAll('[data-diff]').forEach(el=>{ if(el.getAttribute('data-diff')===k) paintDiff(el, k); });
   updateRevCount();
+  scheduleGhSave();
+}
+function refreshDiffUI(){
+  document.querySelectorAll('[data-diff]').forEach(el=>paintDiff(el, el.getAttribute('data-diff')));
+  updateRevCount();
+  if(mode===4) exSearch();
+}
+
+/* ---------- synchronisation GitHub ---------- */
+const GH_API = 'https://api.github.com/repos/victortisme/Boite-a-mots/contents/mots-difficiles.json';
+let ghSha = null, syncTimer = null;
+let ghToken = localStorage.getItem('bam_gh_token') || '';
+function b64enc(s){ return btoa(unescape(encodeURIComponent(s))); }
+function b64dec(s){ return decodeURIComponent(escape(atob(s.replace(/\s/g,'')))); }
+function setSyncStatus(t){ const el = $('syncstatus'); if(el) el.textContent = t; }
+function toggleSyncSetup(){
+  const p = $('syncsetup');
+  p.style.display = p.style.display === 'none' ? '' : 'none';
+  if(p.style.display === '') $('ghtoken').value = ghToken;
+}
+function saveGhToken(){
+  ghToken = $('ghtoken').value.trim();
+  try{ localStorage.setItem('bam_gh_token', ghToken); }catch(e){}
+  $('syncsetup').style.display = 'none';
+  if(ghToken){ setSyncStatus('☁️ Jeton enregistré — connexion…'); ghLoad(); }
+  else setSyncStatus('☁️ Jeton effacé — liste locale uniquement');
+}
+async function ghLoad(){
+  try{
+    const headers = ghToken ? {Authorization: 'Bearer ' + ghToken} : {};
+    const r = await fetch(GH_API + '?ref=main&t=' + Date.now(), {cache: 'no-store', headers: headers});
+    if(!r.ok) throw 0;
+    const j = await r.json();
+    ghSha = j.sha;
+    const arr = JSON.parse(b64dec(j.content));
+    const remote = new Set((Array.isArray(arr) ? arr : []).map(x=>String(x).toLowerCase()));
+    const dirty = localStorage.getItem('bam_dirty') === '1';
+    if(dirty && ghToken){
+      // modifications locales non envoyées : fusion puis envoi
+      diffSet.forEach(k=>remote.add(k));
+      diffSet = remote;
+      saveDiff(); refreshDiffUI(); scheduleGhSave();
+    } else {
+      diffSet = remote;
+      saveDiff(); refreshDiffUI();
+      setSyncStatus(ghToken ? '☁️ Synchronisé (' + diffSet.size + ' mots)' : '☁️ Liste partagée chargée (' + diffSet.size + ' mots) — lecture seule sans jeton');
+    }
+  }catch(e){
+    setSyncStatus(ghToken ? '☁️ Connexion impossible — liste locale utilisée' : '☁️ Liste locale — configurez le jeton pour synchroniser');
+  }
+}
+function scheduleGhSave(){
+  try{ localStorage.setItem('bam_dirty', '1'); }catch(e){}
+  if(!ghToken){ setSyncStatus('☁️ Modifié localement — jeton requis pour synchroniser'); return; }
+  setSyncStatus('☁️ Enregistrement…');
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(()=>ghSave(false), 1500);
+}
+async function ghSave(isRetry){
+  try{
+    const body = {
+      message: 'Mise à jour des mots difficiles (' + diffSet.size + ')',
+      content: b64enc(JSON.stringify([...diffSet].sort(), null, 1)),
+      branch: 'main'
+    };
+    if(ghSha) body.sha = ghSha;
+    const r = await fetch(GH_API, {
+      method: 'PUT',
+      headers: {Authorization: 'Bearer ' + ghToken, 'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
+    });
+    if((r.status === 409 || r.status === 422) && !isRetry){
+      const rr = await fetch(GH_API + '?t=' + Date.now(), {cache:'no-store', headers:{Authorization:'Bearer '+ghToken}});
+      if(rr.ok){ ghSha = (await rr.json()).sha; }
+      return ghSave(true);
+    }
+    if(!r.ok) throw 0;
+    const j = await r.json();
+    ghSha = j.content.sha;
+    try{ localStorage.removeItem('bam_dirty'); }catch(e){}
+    setSyncStatus('☁️ Synchronisé (' + diffSet.size + ' mots)');
+  }catch(e){
+    setSyncStatus('☁️ Échec de l\'enregistrement — vérifiez le jeton et la connexion');
+  }
 }
 function paintDiff(el, k){
   const on = diffSet.has(k);
@@ -1138,6 +1238,7 @@ document.addEventListener('keydown',e=>{
 });
 
 buildCats();
+ghLoad();
 </script>
 </body>
 </html>
