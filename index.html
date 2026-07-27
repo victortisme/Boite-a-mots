@@ -48,9 +48,10 @@ select{
   width:100%;font-size:16px;padding:12px;border-radius:12px;border:0;background:var(--card);color:var(--ink);
   appearance:none;-webkit-appearance:none;
 }
+.startrow{text-align:center;margin:0 0 12px;}
 .start{
-  width:100%;border:0;border-radius:var(--radius);padding:17px;font-size:18px;font-weight:800;cursor:pointer;
-  background:var(--accent2);color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.3);margin-top:4px;
+  border:0;border-radius:999px;padding:10px 26px;font-size:15px;font-weight:800;cursor:pointer;
+  background:var(--accent2);color:#fff;box-shadow:0 4px 12px rgba(0,0,0,.3);
 }
 .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
 .topbar .back{background:rgba(255,255,255,.15);border:0;color:#fff;border-radius:999px;padding:9px 15px;font-size:14px;cursor:pointer;}
@@ -139,19 +140,23 @@ select{
   font-size:22px;font-weight:800;color:#fff;padding:10px 12px;border-radius:12px;
   text-align:center;text-shadow:0 1px 3px rgba(0,0,0,.45);
 }
-.diffbtn{
-  border:0;border-radius:999px;padding:7px 14px;font-size:13.5px;cursor:pointer;
-  background:#eef2f7;color:#5b7089;font-weight:700;
+.diffseg{display:inline-flex;background:#e8edf4;border-radius:999px;padding:3px;gap:3px;}
+.diffseg button{
+  border:0;border-radius:999px;padding:6px 11px;font-size:12.5px;cursor:pointer;
+  background:transparent;color:#5b7089;font-weight:700;
 }
-.diffbtn.on{background:var(--gold);color:#132437;}
+.diffseg button.on[data-s="ND"]{background:#c6d0dd;color:#132437;}
+.diffseg button.on[data-s="facile"]{background:var(--accent2);color:#fff;}
+.diffseg button.on[data-s="difficile"]{background:var(--gold);color:#132437;}
 .diffrow{text-align:center;margin:0 0 10px;}
 .revlist{display:grid;gap:4px;max-height:62dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:2px;}
 .revitem{
-  display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.07);
-  border-radius:8px;padding:8px 12px;font-size:15px;cursor:pointer;
+  display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.07);
+  border-radius:8px;padding:5px 5px 5px 12px;font-size:15px;flex-wrap:wrap;
 }
-.revitem input{width:19px;height:19px;accent-color:var(--gold);flex:none;}
-.revitem.on{background:rgba(232,163,61,.22);}
+.revword{flex:1;min-width:80px;overflow:hidden;text-overflow:ellipsis;}
+.revitem.d{background:rgba(232,163,61,.28);}
+.revitem.f{background:rgba(15,163,107,.25);}
 </style>
 </head>
 <body>
@@ -167,14 +172,25 @@ select{
       <span class="ico">🙈</span><b>Révélation</b>
     </button>
     <button class="mode-btn" id="mode3btn" onclick="setMode(3)">
-      <span class="ico">🔍</span><b>Explorer - tout</b>
-    </button>
-    <button class="mode-btn" id="mode4btn" onclick="setMode(4)">
-      <span class="ico">🔥</span><b>Explorer - difficile</b>
+      <span class="ico">🔍</span><b>Explorer</b>
     </button>
     <button class="mode-btn" id="mode5btn" onclick="setMode(5)">
       <span class="ico">📋</span><b>Révision générale</b>
     </button>
+  </div>
+
+  <div class="startrow" id="startrow">
+    <button class="start" id="startBtn" onclick="startSession()">Commencer ➜</button>
+  </div>
+
+  <div class="panel" id="poolpanel" style="display:none">
+    <h3>Mots utilisés</h3>
+    <div class="row">
+      <button class="chip on" data-p="tous" onclick="setPool('tous')">Tous</button>
+      <button class="chip" data-p="difficile" onclick="setPool('difficile')">🔥 Difficiles</button>
+      <button class="chip" data-p="facile" onclick="setPool('facile')">😊 Faciles</button>
+      <button class="chip" data-p="ND" onclick="setPool('ND')">ND</button>
+    </div>
   </div>
 
   <div class="panel" id="catpanel">
@@ -203,13 +219,12 @@ select{
 
   <div id="revpanel" style="display:none">
     <div class="panel">
-      <h3>Révision générale — marquez les mots difficiles</h3>
+      <h3>Révision générale — ND / facile / difficile</h3>
       <div class="selcount" id="revcount"></div>
       <div class="revlist" id="revlist"></div>
     </div>
   </div>
 
-  <button class="start" id="startBtn" onclick="startSession()">Commencer ➜</button>
 
   <div class="panel" id="syncpanel">
     <h3>☁️ Mots difficiles — synchronisation</h3>
@@ -260,29 +275,44 @@ const imgCache = {}; // key word|catIdx -> {url,page} or null
 /* ---------- home ---------- */
 function setMode(m){
   mode = m;
-  [1,2,3,4,5].forEach(k=>$('mode'+k+'btn').classList.toggle('selected', m===k));
-  const ex = m===3 || m===4;
+  [1,2,3,5].forEach(k=>$('mode'+k+'btn').classList.toggle('selected', m===k));
+  const ex = m===3;
   const play = m===1 || m===2;
   $('catpanel').style.display = play ? '' : 'none';
-  $('startBtn').style.display = play ? '' : 'none';
+  $('startrow').style.display = play ? '' : 'none';
+  $('poolpanel').style.display = m===2 ? '' : 'none';
   $('expanel').style.display = ex ? '' : 'none';
   $('revpanel').style.display = m===5 ? '' : 'none';
   if(ex){
     $('exInput').value=''; $('exSug').innerHTML=''; $('exCard').style.display='none';
-    exSearch();
     $('exInput').focus();
   }
   if(m===5) buildReview();
 }
+function isRevealMode(){ return mode===2; }
+let poolFilter = 'tous';
+function setPool(p){
+  poolFilter = p;
+  document.querySelectorAll('#poolpanel .chip').forEach(c=>c.classList.toggle('on', c.dataset.p===p));
+}
 
-/* ---------- mots difficiles ---------- */
-let diffSet = new Set();
-try{ diffSet = new Set(JSON.parse(localStorage.getItem('bam_diff')||'[]')); }catch(e){}
-function saveDiff(){ try{ localStorage.setItem('bam_diff', JSON.stringify([...diffSet])); }catch(e){} }
-function isDiff(w){ return diffSet.has(w.toLowerCase()); }
-function toggleDiff(w){
+/* ---------- difficulté des mots : ND (par défaut) / facile / difficile ---------- */
+let diffMap = {};
+try{
+  diffMap = JSON.parse(localStorage.getItem('bam_diff2')||'null') || {};
+  if(!Object.keys(diffMap).length){
+    const old = JSON.parse(localStorage.getItem('bam_diff')||'[]');
+    if(Array.isArray(old)) old.forEach(k=>{ diffMap[String(k).toLowerCase()]='difficile'; });
+  }
+}catch(e){}
+function saveDiff(){ try{ localStorage.setItem('bam_diff2', JSON.stringify(diffMap)); }catch(e){} }
+function getDiff(w){ return diffMap[w.toLowerCase()] || 'ND'; }
+function isDiff(w){ return getDiff(w) === 'difficile'; }
+function nbDiff(){ return Object.values(diffMap).filter(v=>v==='difficile').length; }
+function nbFac(){ return Object.values(diffMap).filter(v=>v==='facile').length; }
+function setDiffState(w, s){
   const k = w.toLowerCase();
-  if(diffSet.has(k)) diffSet.delete(k); else diffSet.add(k);
+  if(s === 'ND') delete diffMap[k]; else diffMap[k] = s;
   saveDiff();
   document.querySelectorAll('[data-diff]').forEach(el=>{ if(el.getAttribute('data-diff')===k) paintDiff(el, k); });
   updateRevCount();
@@ -291,7 +321,6 @@ function toggleDiff(w){
 function refreshDiffUI(){
   document.querySelectorAll('[data-diff]').forEach(el=>paintDiff(el, el.getAttribute('data-diff')));
   updateRevCount();
-  if(mode===4) exSearch();
 }
 
 /* ---------- synchronisation GitHub ---------- */
@@ -320,18 +349,19 @@ async function ghLoad(){
     if(!r.ok) throw 0;
     const j = await r.json();
     ghSha = j.sha;
-    const arr = JSON.parse(b64dec(j.content));
-    const remote = new Set((Array.isArray(arr) ? arr : []).map(x=>String(x).toLowerCase()));
+    const raw = JSON.parse(b64dec(j.content));
+    const remote = {};
+    if(Array.isArray(raw)) raw.forEach(x=>{ remote[String(x).toLowerCase()] = 'difficile'; });
+    else if(raw && typeof raw === 'object') for(const k in raw){ const v = String(raw[k]); if(v==='facile'||v==='difficile') remote[k.toLowerCase()] = v; }
     const dirty = localStorage.getItem('bam_dirty') === '1';
     if(dirty && ghToken){
-      // modifications locales non envoyées : fusion puis envoi
-      diffSet.forEach(k=>remote.add(k));
-      diffSet = remote;
+      // modifications locales non envoyées : fusion (local prioritaire) puis envoi
+      diffMap = Object.assign({}, remote, diffMap);
       saveDiff(); refreshDiffUI(); scheduleGhSave();
     } else {
-      diffSet = remote;
+      diffMap = remote;
       saveDiff(); refreshDiffUI();
-      setSyncStatus(ghToken ? '☁️ Synchronisé (' + diffSet.size + ' mots)' : '☁️ Liste partagée chargée (' + diffSet.size + ' mots) — lecture seule sans jeton');
+      setSyncStatus(ghToken ? '☁️ Synchronisé (' + nbDiff() + ' difficiles · ' + nbFac() + ' faciles)' : '☁️ Liste partagée chargée — lecture seule sans jeton');
     }
   }catch(e){
     setSyncStatus(ghToken ? '☁️ Connexion impossible — liste locale utilisée' : '☁️ Liste locale — configurez le jeton pour synchroniser');
@@ -346,9 +376,11 @@ function scheduleGhSave(){
 }
 async function ghSave(isRetry){
   try{
+    const sorted = {};
+    Object.keys(diffMap).sort().forEach(k=>{ sorted[k] = diffMap[k]; });
     const body = {
-      message: 'Mise à jour des mots difficiles (' + diffSet.size + ')',
-      content: b64enc(JSON.stringify([...diffSet].sort(), null, 1)),
+      message: 'Mise à jour des difficultés (' + nbDiff() + ' difficiles, ' + nbFac() + ' faciles)',
+      content: b64enc(JSON.stringify(sorted, null, 1)),
       branch: 'main'
     };
     if(ghSha) body.sha = ghSha;
@@ -366,24 +398,32 @@ async function ghSave(isRetry){
     const j = await r.json();
     ghSha = j.content.sha;
     try{ localStorage.removeItem('bam_dirty'); }catch(e){}
-    setSyncStatus('☁️ Synchronisé (' + diffSet.size + ' mots)');
+    setSyncStatus('☁️ Synchronisé (' + nbDiff() + ' difficiles · ' + nbFac() + ' faciles)');
   }catch(e){
     setSyncStatus('☁️ Échec de l\'enregistrement — vérifiez le jeton et la connexion');
   }
 }
 function paintDiff(el, k){
-  const on = diffSet.has(k);
-  if(el.tagName === 'INPUT'){ el.checked = on; el.closest('.revitem')?.classList.toggle('on', on); return; }
-  el.classList.toggle('on', on);
-  el.textContent = on ? '★ Difficile' : '☆ Marquer comme difficile';
+  const st = diffMap[k] || 'ND';
+  if(!el.classList.contains('diffseg')) return;
+  el.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.s === st));
+  const row = el.closest('.revitem');
+  if(row){ row.classList.toggle('d', st==='difficile'); row.classList.toggle('f', st==='facile'); }
 }
 function diffBtn(w){
-  const b = document.createElement('button');
-  b.className = 'diffbtn';
-  b.setAttribute('data-diff', w.toLowerCase());
-  b.onclick = e=>{ e.stopPropagation(); toggleDiff(w); };
-  paintDiff(b, w.toLowerCase());
-  return b;
+  const k = w.toLowerCase();
+  const g = document.createElement('span');
+  g.className = 'diffseg';
+  g.setAttribute('data-diff', k);
+  [['ND','ND'],['facile','😊 Facile'],['difficile','🔥 Difficile']].forEach(p=>{
+    const b = document.createElement('button');
+    b.dataset.s = p[0];
+    b.textContent = p[1];
+    b.onclick = e=>{ e.stopPropagation(); e.preventDefault(); setDiffState(w, p[0]); };
+    g.appendChild(b);
+  });
+  paintDiff(g, k);
+  return g;
 }
 let revBuilt = false;
 function buildReview(){
@@ -392,25 +432,20 @@ function buildReview(){
   revBuilt = true;
   const frag = document.createDocumentFragment();
   [...DATA.words].sort((a,b)=>a.w.localeCompare(b.w,'fr')).forEach(w=>{
-    const k = w.w.toLowerCase();
-    const lab = document.createElement('label');
-    lab.className = 'revitem' + (diffSet.has(k) ? ' on' : '');
-    const cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.checked = diffSet.has(k);
-    cb.setAttribute('data-diff', k);
-    cb.onchange = ()=>toggleDiff(w.w);
-    lab.appendChild(cb);
+    const row = document.createElement('div');
+    row.className = 'revitem';
     const sp = document.createElement('span');
+    sp.className = 'revword';
     sp.textContent = w.w;
-    lab.appendChild(sp);
-    frag.appendChild(lab);
+    row.appendChild(sp);
+    row.appendChild(diffBtn(w.w));
+    frag.appendChild(row);
   });
   $('revlist').appendChild(frag);
 }
 function updateRevCount(){
   const el = $('revcount');
-  if(el) el.textContent = diffSet.size + (diffSet.size > 1 ? ' mots difficiles' : ' mot difficile');
+  if(el) el.textContent = nbDiff() + ' difficile(s) · ' + nbFac() + ' facile(s) · ' + (DATA.words.length - nbDiff() - nbFac()) + ' ND';
 }
 function buildCats(){
   const g = $('catgrid');
@@ -456,6 +491,10 @@ function startSession(){
   const sel = new Set(selectedCats());
   pool = DATA.words.filter(w=>w.c.some(ci=>sel.has(ci)));
   if(!pool.length){ alert('Sélectionnez au moins une catégorie.'); return; }
+  if(mode===2 && poolFilter !== 'tous'){
+    pool = pool.filter(w=>getDiff(w.w) === poolFilter);
+    if(!pool.length){ alert('Aucun mot ne correspond à ce filtre dans les catégories choisies.'); return; }
+  }
   shuffle(pool);
   idx = 0;
   $('home').classList.remove('active');
@@ -478,35 +517,18 @@ function wordBg(w){
   }).join(', ');
   return 'linear-gradient(135deg, ' + stops + ')';
 }
-function exWords(){
-  return mode===4 ? DATA.words.filter(w=>isDiff(w.w)) : DATA.words;
-}
+function exWords(){ return DATA.words; }
 function exSearch(){
   const q = norm($('exInput').value.trim());
   const sug = $('exSug');
   sug.innerHTML = '';
   $('exCard').style.display = 'none';
   const src = exWords();
-  if(!q){
-    if(mode===4){
-      if(!src.length){
-        sug.innerHTML = '<span class="exnone">Aucun mot difficile pour l\'instant. Marquez-en avec ☆ ou via « Révision générale ».</span>';
-        return;
-      }
-      src.forEach(w=>{
-        const b = document.createElement('button');
-        b.style.background = wordBg(w);
-        b.textContent = w.w;
-        b.onclick = ()=>{ $('exInput').value = w.w; exShow(w); };
-        sug.appendChild(b);
-      });
-    }
-    return;
-  }
+  if(!q) return;
   // catégories correspondantes
   const catMatches = [];
   DATA.cats.forEach((c,i)=>{
-    if(norm(c.l).includes(q) && (mode!==4 || src.some(w=>w.c.includes(i)))) catMatches.push(i);
+    if(norm(c.l).includes(q)) catMatches.push(i);
   });
   catMatches.slice(0,8).forEach(ci=>{
     const b = document.createElement('button');
@@ -525,7 +547,7 @@ function exSearch(){
   }
   const list = starts.concat(contains).slice(0, 24);
   if(!list.length && !catMatches.length){
-    sug.innerHTML = '<span class="exnone">' + (mode===4 ? 'Aucun mot difficile ne correspond.' : 'Aucun mot ni catégorie ne correspond.') + '</span>';
+    sug.innerHTML = '<span class="exnone">Aucun mot ni catégorie ne correspond.</span>';
     return;
   }
   list.forEach(w=>{
@@ -644,20 +666,20 @@ function render(){
     const cat = DATA.cats[ci];
     const div = document.createElement('div');
     div.className = 'meaning';
-    const labHtml = mode===2
+    const labHtml = isRevealMode()
       ? `<div class="catlab hiddenlab" data-label="${escapeHtml(cat.l)}">❓ Catégorie cachée</div>`
       : `<div class="catlab">${escapeHtml(cat.l)}</div>`;
     div.innerHTML = `${labHtml}
       <div class="imgwrap" data-iw="${ci}">
         <div class="status">Chargement…</div>
-        ${mode===2 ? '<div class="veil">❓</div>' : ''}
+        ${isRevealMode() ? '<div class="veil">❓</div>' : ''}
       </div>`;
     box.appendChild(div);
     loadImage(item, ci, div.querySelector('.imgwrap'));
   });
   const rb = $('revealBtn'), nb = $('nextBtn');
   revealed = false;
-  if(mode===2){
+  if(isRevealMode()){
     rb.style.display=''; rb.textContent='👁 Révéler';
     nb.style.display='none';
   } else {
@@ -668,7 +690,7 @@ function render(){
 }
 let revealed = false;
 function revealOrNext(){
-  if(mode!==2) return;
+  if(!isRevealMode()) return;
   if(revealed){ nav(1); return; }
   document.querySelectorAll('.veil').forEach(v=>v.remove());
   document.querySelectorAll('.catlab.hiddenlab').forEach(el=>{
@@ -1220,21 +1242,33 @@ function fetchJson(url){
     x0=null;
     if(Math.abs(dx)>70 && Math.abs(dx)>2*Math.abs(dy)){
       const d = dx<0?1:-1;
-      if(mode===2 && !revealed && d===1) return; // pas de "suivant" avant révélation
+      if(isRevealMode() && !revealed && d===1) return; // pas de "suivant" avant révélation
       nav(d);
     }
   },{passive:true});
 })();
 
+/* toucher l'image (ou le bord droit de l'écran) : révéler puis passer au suivant */
+document.addEventListener('click', e=>{
+  if(!$('play').classList.contains('active')) return;
+  if(e.target.closest('button, input, a, .diffseg')) return;
+  const onImage = e.target.closest('.imgwrap');
+  const rightEdge = e.clientX > window.innerWidth * 0.75;
+  if(onImage || rightEdge){
+    if(isRevealMode() && !revealed) revealOrNext();
+    else nav(1);
+  }
+});
+
 /* keyboard (desktop) */
 document.addEventListener('keydown',e=>{
   if(!$('play').classList.contains('active')) return;
   if(e.key==='ArrowRight'){
-    if(mode===2 && !revealed) revealOrNext(); // révèle d'abord
+    if(isRevealMode() && !revealed) revealOrNext(); // révèle d'abord
     else nav(1);
   }
   else if(e.key==='ArrowLeft') nav(-1);
-  else if(e.key===' '||e.key==='Enter'){ if(mode===2){ e.preventDefault(); revealOrNext(); } }
+  else if(e.key===' '||e.key==='Enter'){ if(isRevealMode()){ e.preventDefault(); revealOrNext(); } }
 });
 
 buildCats();
