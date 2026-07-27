@@ -349,26 +349,46 @@ async function ghLoad(){
     if(!r.ok) throw 0;
     const j = await r.json();
     ghSha = j.sha;
-    const raw = JSON.parse(b64dec(j.content));
-    const remote = {};
-    if(Array.isArray(raw)) raw.forEach(x=>{ remote[String(x).toLowerCase()] = 'difficile'; });
-    else if(raw && typeof raw === 'object') for(const k in raw){ const v = String(raw[k]); if(v==='facile'||v==='difficile') remote[k.toLowerCase()] = v; }
-    const dirty = localStorage.getItem('bam_dirty') === '1';
-    if(dirty && ghToken){
-      // modifications locales non envoyées : fusion (local prioritaire) puis envoi
-      diffMap = Object.assign({}, remote, diffMap);
-      saveDiff(); refreshDiffUI(); scheduleGhSave();
+    const remote = parseDiffPayload(JSON.parse(b64dec(j.content)));
+    const edits = localEdits();
+    if(Object.keys(edits).length){
+      // éditions locales non envoyées : on les applique sur l'état distant
+      diffMap = applyEdits(remote, edits);
+      saveDiff(); refreshDiffUI();
+      if(ghToken) scheduleGhSave();
+      else setSyncStatus('☁️ Modifications locales non envoyées — jeton requis');
     } else {
       diffMap = remote;
-      saveDiff(); refreshDiffUI();
+      saveDiff(); writeBase(remote); refreshDiffUI();
       setSyncStatus(ghToken ? '☁️ Synchronisé (' + nbDiff() + ' difficiles · ' + nbFac() + ' faciles)' : '☁️ Liste partagée chargée — lecture seule sans jeton');
     }
   }catch(e){
     setSyncStatus(ghToken ? '☁️ Connexion impossible — liste locale utilisée' : '☁️ Liste locale — configurez le jeton pour synchroniser');
   }
 }
+/* état de la dernière synchronisation réussie, pour ne pousser que les vraies éditions locales */
+function readBase(){ try{ return JSON.parse(localStorage.getItem('bam_base')||'{}') || {}; }catch(e){ return {}; } }
+function writeBase(m){ try{ localStorage.setItem('bam_base', JSON.stringify(m)); }catch(e){} }
+function parseDiffPayload(raw){
+  const out = {};
+  if(Array.isArray(raw)) raw.forEach(x=>{ out[String(x).toLowerCase()] = 'difficile'; });
+  else if(raw && typeof raw === 'object') for(const k in raw){ const v = String(raw[k]); if(v==='facile'||v==='difficile') out[k.toLowerCase()] = v; }
+  return out;
+}
+function localEdits(){
+  const base = readBase(), edits = {};
+  new Set([...Object.keys(diffMap), ...Object.keys(base)]).forEach(k=>{
+    const now = diffMap[k] || 'ND', before = base[k] || 'ND';
+    if(now !== before) edits[k] = now;
+  });
+  return edits;
+}
+function applyEdits(remote, edits){
+  const merged = Object.assign({}, remote);
+  for(const k in edits){ if(edits[k]==='ND') delete merged[k]; else merged[k] = edits[k]; }
+  return merged;
+}
 function scheduleGhSave(){
-  try{ localStorage.setItem('bam_dirty', '1'); }catch(e){}
   if(!ghToken){ setSyncStatus('☁️ Modifié localement — jeton requis pour synchroniser'); return; }
   setSyncStatus('☁️ Enregistrement…');
   clearTimeout(syncTimer);
@@ -376,10 +396,18 @@ function scheduleGhSave(){
 }
 async function ghSave(isRetry){
   try{
+    // 1. relire l'état distant pour ne rien écraser (fusion, pas remplacement)
+    let remote = {};
+    try{
+      const r0 = await fetch(GH_API + '?ref=main&t=' + Date.now(), {cache:'no-store', headers:{Authorization:'Bearer '+ghToken}});
+      if(r0.ok){ const j0 = await r0.json(); ghSha = j0.sha; remote = parseDiffPayload(JSON.parse(b64dec(j0.content))); }
+    }catch(e){}
+    // 2. appliquer uniquement les éditions locales sur cet état
+    const merged = applyEdits(remote, localEdits());
     const sorted = {};
-    Object.keys(diffMap).sort().forEach(k=>{ sorted[k] = diffMap[k]; });
+    Object.keys(merged).sort().forEach(k=>{ sorted[k] = merged[k]; });
     const body = {
-      message: 'Mise à jour des difficultés (' + nbDiff() + ' difficiles, ' + nbFac() + ' faciles)',
+      message: 'Mise à jour des difficultés',
       content: b64enc(JSON.stringify(sorted, null, 1)),
       branch: 'main'
     };
@@ -390,14 +418,13 @@ async function ghSave(isRetry){
       body: JSON.stringify(body)
     });
     if((r.status === 409 || r.status === 422) && !isRetry){
-      const rr = await fetch(GH_API + '?t=' + Date.now(), {cache:'no-store', headers:{Authorization:'Bearer '+ghToken}});
-      if(rr.ok){ ghSha = (await rr.json()).sha; }
       return ghSave(true);
     }
     if(!r.ok) throw 0;
     const j = await r.json();
     ghSha = j.content.sha;
-    try{ localStorage.removeItem('bam_dirty'); }catch(e){}
+    diffMap = merged;
+    saveDiff(); writeBase(merged); refreshDiffUI();
     setSyncStatus('☁️ Synchronisé (' + nbDiff() + ' difficiles · ' + nbFac() + ' faciles)');
   }catch(e){
     setSyncStatus('☁️ Échec de l\'enregistrement — vérifiez le jeton et la connexion');
