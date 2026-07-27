@@ -1262,6 +1262,7 @@ document.addEventListener('click', e=>{
 
 /* keyboard (desktop) */
 document.addEventListener('keydown',e=>{
+  if(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
   if(!$('play').classList.contains('active')) return;
   if(e.key==='ArrowRight'){
     if(isRevealMode() && !revealed) revealOrNext(); // révèle d'abord
@@ -1269,6 +1270,9 @@ document.addEventListener('keydown',e=>{
   }
   else if(e.key==='ArrowLeft') nav(-1);
   else if(e.key===' '||e.key==='Enter'){ if(isRevealMode()){ e.preventDefault(); revealOrNext(); } }
+  else if(e.key==='f'||e.key==='F'){ if(pool[idx]) setDiffState(pool[idx].w, 'facile'); }
+  else if(e.key==='d'||e.key==='D'){ if(pool[idx]) setDiffState(pool[idx].w, 'difficile'); }
+  else if(e.key==='n'||e.key==='N'){ if(pool[idx]) setDiffState(pool[idx].w, 'ND'); }
 });
 
 buildCats();
