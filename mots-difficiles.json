@@ -51,6 +51,7 @@
  "cyan": "facile",
  "cyclisme": "facile",
  "efraie": "facile",
+ "flipper": "facile",
  "garagiste": "facile",
  "graveur": "difficile",
  "grenadier": "difficile",
@@ -83,6 +84,7 @@
  "turner": "difficile",
  "tôlier": "facile",
  "verdi": "facile",
+ "vertèbre": "facile",
  "walsh": "difficile",
  "écrivain": "facile"
 }
