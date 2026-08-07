@@ -101,7 +101,23 @@ select{
 #syncpanel{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:7px 12px;flex:none;margin-bottom:0;}
 #syncpanel h3{display:none;}
 #syncpanel .selcount{margin:0;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-#syncsetup{flex-basis:100%;}
+.dlgback{
+  position:fixed;inset:0;background:rgba(6,20,40,.75);z-index:50;
+  display:flex;align-items:flex-start;justify-content:center;padding:calc(24px + var(--sat)) 14px 14px;
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+}
+.dlg{
+  background:var(--bg2);border-radius:18px;padding:16px;width:100%;max-width:460px;
+  box-shadow:0 12px 40px rgba(0,0,0,.5);
+}
+.dlg h3{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:1px;color:#bcd0e8;}
+.tokfield{
+  width:100%;font-size:16px;padding:12px;border-radius:12px;border:0;resize:vertical;
+  background:var(--card);color:var(--ink);font-family:ui-monospace,Menlo,monospace;
+  word-break:break-all;-webkit-user-select:text;user-select:text;
+}
+.dlgrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+.dlghelp{font-size:11px;line-height:1.4;color:#8aa0b8;margin:12px 0 0;white-space:normal;}
 .selcount{font-size:12px;color:#e8a33d;margin:4px 4px 0;flex:none;}
 .catgrid{display:grid;grid-template-columns:1fr;gap:6px;flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:2px;align-content:start;}
 .catitem{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.07);border-radius:10px;padding:10px 12px;font-size:14.5px;cursor:pointer;}
@@ -238,16 +254,26 @@ select{
   <div class="panel" id="syncpanel">
     <h3>☁️ Mots difficiles — synchronisation</h3>
     <div class="selcount" id="syncstatus">Chargement…</div>
-    <div id="syncsetup" style="display:none;margin-top:8px">
-      <input class="exsearch" id="ghtoken" type="password" placeholder="Jeton GitHub (fine-grained)" autocomplete="off">
-      <button class="smallbtn gold" onclick="saveGhToken()">Enregistrer le jeton</button>
-      <p class="foot" style="text-align:left;margin-top:8px">
+    <button class="smallbtn" onclick="toggleSyncSetup()">Configurer</button>
+  </div>
+
+  <div id="syncsetup" class="dlgback" style="display:none" onclick="if(event.target===this)toggleSyncSetup()">
+    <div class="dlg">
+      <h3>Jeton GitHub — synchronisation</h3>
+      <textarea id="ghtoken" class="tokfield" rows="3" placeholder="Collez ici le jeton (github_pat_…)"
+        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+      <div class="dlgrow">
+        <button class="smallbtn" onclick="pasteToken()">📋 Coller</button>
+        <button class="smallbtn" onclick="$('ghtoken').value=''">Effacer</button>
+        <button class="smallbtn gold" onclick="saveGhToken()">Enregistrer</button>
+        <button class="smallbtn" onclick="toggleSyncSetup()">Fermer</button>
+      </div>
+      <p class="dlghelp">
         GitHub ▸ Settings ▸ Developer settings ▸ Personal access tokens ▸ Fine-grained tokens ▸ Generate new token.
         Repository access : « Only select repositories » ▸ Boite-a-mots. Permissions ▸ Contents : Read and write.
         Le jeton reste uniquement sur cet appareil.
       </p>
     </div>
-    <button class="smallbtn" onclick="toggleSyncSetup()">Configurer</button>
   </div>
 
   <p class="foot">Images : Wikipédia / Wikimedia Commons (connexion Internet requise)</p>
@@ -341,11 +367,25 @@ function b64dec(s){ return decodeURIComponent(escape(atob(s.replace(/\s/g,''))))
 function setSyncStatus(t){ const el = $('syncstatus'); if(el) el.textContent = t; }
 function toggleSyncSetup(){
   const p = $('syncsetup');
-  p.style.display = p.style.display === 'none' ? '' : 'none';
-  if(p.style.display === '') $('ghtoken').value = ghToken;
+  const open = p.style.display === 'none';
+  p.style.display = open ? 'flex' : 'none';
+  if(open){ $('ghtoken').value = ghToken; setTimeout(()=>$('ghtoken').focus(), 50); }
+}
+async function pasteToken(){
+  try{
+    const t = await navigator.clipboard.readText();
+    if(t) $('ghtoken').value = t.trim();
+    else alert('Presse-papiers vide.');
+  }catch(e){
+    alert('Collage automatique refusé par le navigateur : appuyez longuement dans le champ puis choisissez « Coller ».');
+    $('ghtoken').focus();
+  }
 }
 function saveGhToken(){
-  ghToken = $('ghtoken').value.trim();
+  ghToken = $('ghtoken').value.replace(/\s+/g,'').trim();
+  if(ghToken && !/^gh[pousr]_|^github_pat_/.test(ghToken)){
+    if(!confirm('Ce texte ne ressemble pas à un jeton GitHub. L\'enregistrer quand même ?')) return;
+  }
   try{ localStorage.setItem('bam_gh_token', ghToken); }catch(e){}
   $('syncsetup').style.display = 'none';
   if(ghToken){ setSyncStatus('☁️ Jeton enregistré — connexion…'); ghLoad(); }
