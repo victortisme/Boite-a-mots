@@ -340,7 +340,36 @@ try{
     if(Array.isArray(old)) old.forEach(k=>{ diffMap[String(k).toLowerCase()]='difficile'; });
   }
 }catch(e){}
-function saveDiff(){ try{ localStorage.setItem('bam_diff2', JSON.stringify(diffMap)); }catch(e){} }
+/* filet de sécurité : si bam_diff2 est vide ou illisible mais qu'une sauvegarde
+   existe, on repart de la sauvegarde plutôt que d'une liste vide. */
+try{
+  if(!Object.keys(diffMap).length){
+    const bak = JSON.parse(localStorage.getItem('bam_diff2_bak')||'null');
+    if(bak && typeof bak === 'object' && Object.keys(bak).length) diffMap = bak;
+  }
+}catch(e){}
+function purgeImageCache(){
+  const kill = [];
+  for(let i=0;i<localStorage.length;i++){ const k = localStorage.key(i); if(k && k.startsWith('bam4_')) kill.push(k); }
+  kill.forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
+  return kill.length;
+}
+function saveDiff(){
+  const payload = JSON.stringify(diffMap);
+  try{
+    localStorage.setItem('bam_diff2', payload);
+    if(Object.keys(diffMap).length) localStorage.setItem('bam_diff2_bak', payload);
+  }catch(e){
+    // quota dépassé : le cache d'images est le seul poste sacrifiable
+    purgeImageCache();
+    try{
+      localStorage.setItem('bam_diff2', payload);
+      if(Object.keys(diffMap).length) localStorage.setItem('bam_diff2_bak', payload);
+    }catch(e2){
+      setSyncStatus('⚠️ Stockage local saturé — classements non enregistrés sur l\'appareil');
+    }
+  }
+}
 function getDiff(w){ return diffMap[w.toLowerCase()] || 'ND'; }
 function isDiff(w){ return getDiff(w) === 'difficile'; }
 function nbDiff(){ return Object.values(diffMap).filter(v=>v==='difficile').length; }
@@ -400,7 +429,9 @@ async function ghLoad(){
     ghSha = j.sha;
     const remote = parseDiffPayload(JSON.parse(b64dec(j.content)));
     const edits = localEdits();
-    if(Object.keys(edits).length){
+    if(edits === null){
+      resetFromRemote(remote, '☁️ Liste locale incohérente — rechargée depuis GitHub (aucune suppression envoyée)');
+    } else if(Object.keys(edits).length){
       // éditions locales non envoyées : on les applique sur l'état distant
       diffMap = applyEdits(remote, edits);
       saveDiff(); refreshDiffUI();
@@ -424,13 +455,29 @@ function parseDiffPayload(raw){
   else if(raw && typeof raw === 'object') for(const k in raw){ const v = String(raw[k]); if(v==='facile'||v==='difficile') out[k.toLowerCase()] = v; }
   return out;
 }
+/* Nombre maximal de retours à « ND » transmissibles en une synchronisation.
+   Au-delà, il ne s'agit plus d'une édition mais d'une perte du stockage local. */
+const MAX_SUPPR = 5;
+function countSuppr(edits){ let n = 0; for(const k in edits){ if(edits[k] === 'ND') n++; } return n; }
+/* Renvoie les éditions locales, ou null si l'état local est jugé non fiable.
+   null = « ne rien envoyer, recharger depuis GitHub ». */
 function localEdits(){
   const base = readBase(), edits = {};
+  // Cas 1 : liste locale vide alors que la base ne l'est pas.
+  // C'est une perte de données, jamais une suppression volontaire.
+  if(!Object.keys(diffMap).length && Object.keys(base).length) return null;
   new Set([...Object.keys(diffMap), ...Object.keys(base)]).forEach(k=>{
     const now = diffMap[k] || 'ND', before = base[k] || 'ND';
     if(now !== before) edits[k] = now;
   });
+  // Cas 2 : suppression de masse.
+  if(countSuppr(edits) > MAX_SUPPR) return null;
   return edits;
+}
+function resetFromRemote(remote, msg){
+  diffMap = remote;
+  saveDiff(); writeBase(remote); refreshDiffUI();
+  setSyncStatus(msg);
 }
 function applyEdits(remote, edits){
   const merged = Object.assign({}, remote);
@@ -452,7 +499,18 @@ async function ghSave(isRetry){
       if(r0.ok){ const j0 = await r0.json(); ghSha = j0.sha; remote = parseDiffPayload(JSON.parse(b64dec(j0.content))); }
     }catch(e){}
     // 2. appliquer uniquement les éditions locales sur cet état
-    const merged = applyEdits(remote, localEdits());
+    const edits = localEdits();
+    if(edits === null){
+      resetFromRemote(remote, '⚠️ Suppression massive bloquée — liste rechargée depuis GitHub');
+      return;
+    }
+    const merged = applyEdits(remote, edits);
+    // 3. garde-fou final : ne jamais publier un fichier vide ou brutalement amputé
+    const nRemote = Object.keys(remote).length, nMerged = Object.keys(merged).length;
+    if(nRemote && (!nMerged || nMerged < nRemote - MAX_SUPPR)){
+      resetFromRemote(remote, '⚠️ Enregistrement annulé : perte anormale de mots — liste rechargée');
+      return;
+    }
     const sorted = {};
     Object.keys(merged).sort().forEach(k=>{ sorted[k] = merged[k]; });
     const body = {
