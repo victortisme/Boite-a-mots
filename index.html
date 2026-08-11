@@ -377,6 +377,7 @@ function nbFac(){ return Object.values(diffMap).filter(v=>v==='facile').length; 
 function setDiffState(w, s){
   const k = w.toLowerCase();
   if(s === 'ND') delete diffMap[k]; else diffMap[k] = s;
+  diffRev++;
   saveDiff();
   document.querySelectorAll('[data-diff]').forEach(el=>{ if(el.getAttribute('data-diff')===k) paintDiff(el, k); });
   updateRevCount();
@@ -390,6 +391,10 @@ function refreshDiffUI(){
 /* ---------- synchronisation GitHub ---------- */
 const GH_API = 'https://api.github.com/repos/victortisme/Boite-a-mots/contents/mots-difficiles.json';
 let ghSha = null, syncTimer = null;
+/* diffRev augmente à chaque modification locale. Une fusion calculée avant une
+   modification ne doit jamais être réappliquée après : c'est ce qui faisait
+   « revenir » le bouton de difficulté à sa valeur précédente. */
+let diffRev = 0, ghSaving = false;
 let ghToken = localStorage.getItem('bam_gh_token') || '';
 function b64enc(s){ return btoa(unescape(encodeURIComponent(s))); }
 function b64dec(s){ return decodeURIComponent(escape(atob(s.replace(/\s/g,'')))); }
@@ -421,6 +426,7 @@ function saveGhToken(){
   else setSyncStatus('☁️ Jeton effacé — liste locale uniquement');
 }
 async function ghLoad(){
+  const rev0 = diffRev;
   try{
     const headers = ghToken ? {Authorization: 'Bearer ' + ghToken} : {};
     const r = await fetch(GH_API + '?ref=main&t=' + Date.now(), {cache: 'no-store', headers: headers});
@@ -428,6 +434,13 @@ async function ghLoad(){
     const j = await r.json();
     ghSha = j.sha;
     const remote = parseDiffPayload(JSON.parse(b64dec(j.content)));
+    if(diffRev !== rev0){
+      // l'utilisateur a modifié une difficulté pendant le chargement : on fusionne
+      const e0 = localEdits();
+      if(e0){ diffMap = applyEdits(remote, e0); saveDiff(); refreshDiffUI(); }
+      if(ghToken) scheduleGhSave();
+      return;
+    }
     const edits = localEdits();
     if(edits === null){
       resetFromRemote(remote, '☁️ Liste locale incohérente — rechargée depuis GitHub (aucune suppression envoyée)');
@@ -491,14 +504,23 @@ function scheduleGhSave(){
   syncTimer = setTimeout(()=>ghSave(false), 1500);
 }
 async function ghSave(isRetry){
+  if(ghSaving){ clearTimeout(syncTimer); syncTimer = setTimeout(()=>ghSave(false), 700); return; }
+  ghSaving = true;
   try{
     // 1. relire l'état distant pour ne rien écraser (fusion, pas remplacement)
-    let remote = {};
+    let remote = null;
     try{
       const r0 = await fetch(GH_API + '?ref=main&t=' + Date.now(), {cache:'no-store', headers:{Authorization:'Bearer '+ghToken}});
       if(r0.ok){ const j0 = await r0.json(); ghSha = j0.sha; remote = parseDiffPayload(JSON.parse(b64dec(j0.content))); }
     }catch(e){}
+    if(remote === null){
+      // relecture impossible : écrire maintenant écraserait la liste distante
+      setSyncStatus('☁️ Lecture GitHub impossible — enregistrement reporté');
+      clearTimeout(syncTimer); syncTimer = setTimeout(()=>ghSave(false), 6000);
+      return;
+    }
     // 2. appliquer uniquement les éditions locales sur cet état
+    const rev = diffRev;            // instantané : toute modification ultérieure invalide cette fusion
     const edits = localEdits();
     if(edits === null){
       resetFromRemote(remote, '⚠️ Suppression massive bloquée — liste rechargée depuis GitHub');
@@ -525,16 +547,25 @@ async function ghSave(isRetry){
       body: JSON.stringify(body)
     });
     if((r.status === 409 || r.status === 422) && !isRetry){
-      return ghSave(true);
+      clearTimeout(syncTimer); syncTimer = setTimeout(()=>ghSave(true), 400);
+      return;
     }
     if(!r.ok) throw 0;
     const j = await r.json();
     ghSha = j.content.sha;
-    diffMap = merged;
-    saveDiff(); writeBase(merged); refreshDiffUI();
-    setSyncStatus('☁️ Synchronisé (' + nbDiff() + ' difficiles · ' + nbFac() + ' faciles)');
+    if(diffRev === rev){
+      diffMap = merged;
+      saveDiff(); writeBase(merged); refreshDiffUI();
+      setSyncStatus('☁️ Synchronisé (' + nbDiff() + ' difficiles · ' + nbFac() + ' faciles)');
+    }else{
+      // modifié pendant l'envoi : on garde l'état local et on renvoie
+      setSyncStatus('☁️ Enregistrement…');
+      clearTimeout(syncTimer); syncTimer = setTimeout(()=>ghSave(false), 900);
+    }
   }catch(e){
     setSyncStatus('☁️ Échec de l\'enregistrement — vérifiez le jeton et la connexion');
+  }finally{
+    ghSaving = false;
   }
 }
 function paintDiff(el, k){
@@ -917,7 +948,7 @@ const CATX = {
 const OVR = {
 "avion|Armes":"avion militaire de chasse",
 "arc|Armes":"arc (arme)",
-"baton|Armes":"bâton de combat",
+"bâton|Armes":"bâton de combat",
 "mine|Armes":"mine terrestre explosif",
 "torpille|Armes":"torpille arme sous-marine",
 "fusée|Armes":"roquette arme militaire",
@@ -999,7 +1030,7 @@ const OVR = {
 "droite|Politique":"droite (politique)",
 "gauche|Politique":"gauche (politique)",
 "centre|Politique":"centrisme politique",
-"siege|Armée":"siège (militaire)",
+"siège|Armée":"siège (militaire)",
 "charge|Armée":"charge (militaire)",
 "retraite|Armée":"retraite (militaire)",
 "pensée|Flore — Fleurs":"pensée (plante)",
@@ -1008,7 +1039,7 @@ const OVR = {
 "avocat|Justice":"avocat (métier)",
 "orange|Flore — Fruits":"orange (fruit)",
 "prune|Flore — Fruits":"prune (fruit)",
-"pèche|Flore — Fruits":"pêche (fruit)",
+"pêche|Flore — Fruits":"pêche (fruit)",
 "rave|Flore — Légumes":"rave (plante)",
 "patate|Flore — Légumes":"pomme de terre",
 "aile|Véhicules — Auto":"aile (automobile)",
@@ -1051,12 +1082,12 @@ const OVR = {
 "piquet|Jeux":"piquet jeu de cartes",
 "paume|Jeux":"jeu de paume",
 "mikado|Jeux":"mikado (jeu)",
-"bardet|Animaux, faune — Chiens":"barbet chien race",
+"barbet|Animaux, faune — Chiens":"barbet chien race",
 "loulou|Animaux, faune — Chiens":"loulou de Poméranie spitz chien",
 "jars|Animaux, faune — Mammifères":"jars oie mâle",
 "cane|Animaux, faune — Oiseaux":"cane canard femelle",
-"efraie|Animaux, faune — Oiseaux":"effraie des clochers chouette",
-"maquerau|Animaux, faune — Poissons":"maquereau poisson",
+"effraie|Animaux, faune — Oiseaux":"effraie des clochers chouette",
+"maquereau|Animaux, faune — Poissons":"maquereau poisson",
 "bureau|Architecture — Batiments":"immeuble de bureaux",
 "faculté|Architecture — Batiments":"université faculté bâtiment",
 "faction|Armée":"sentinelle garde militaire",
@@ -1084,7 +1115,7 @@ const OVR = {
 "Jodhpur|Equitation":"pantalon jodhpur équitation",
 "cavalier|Equitation":"cavalier équitation cheval",
 "genet|Flore — Arbres":"genêt arbuste fleurs jaunes",
-"liege|Flore — Arbres":"chêne-liège arbre écorce",
+"liège|Flore — Arbres":"chêne-liège arbre écorce",
 "ormeau|Flore — Arbres":"orme arbre ormeau",
 "Douve|Géographie — Fleuves":"Douve fleuve Normandie",
 "Congo|Géographie — Fleuves":"Congo (fleuve)",
@@ -1096,14 +1127,14 @@ const OVR = {
 "Canadien|Géographie — Nationalités":"Canada pays drapeau",
 "Chilien|Géographie — Nationalités":"Chili pays drapeau",
 "Danois|Géographie — Nationalités":"Danemark pays drapeau",
-"Egyptien|Géographie — Nationalités":"Égypte pays drapeau",
+"Égyptien|Géographie — Nationalités":"Égypte pays drapeau",
 "Français|Géographie — Nationalités":"France pays drapeau",
 "Hollandais|Géographie — Nationalités":"Pays-Bas pays drapeau",
 "Islandais|Géographie — Nationalités":"Islande pays drapeau",
 "Kazakh|Géographie — Nationalités":"Kazakhstan pays drapeau",
 "Marocain|Géographie — Nationalités":"Maroc pays drapeau",
 "Nigérian|Géographie — Nationalités":"Nigeria pays drapeau",
-"Norvègien|Géographie — Nationalités":"Norvège pays drapeau",
+"Norvégien|Géographie — Nationalités":"Norvège pays drapeau",
 "Ouzbek|Géographie — Nationalités":"Ouzbékistan pays drapeau",
 "Polonais|Géographie — Nationalités":"Pologne pays drapeau",
 "Slovaque|Géographie — Nationalités":"Slovaquie pays drapeau",
@@ -1261,16 +1292,73 @@ function scoreOf(p, kws){
   return s;
 }
 
+/* Titre exact d'article Wikipédia : le moyen le plus sûr de fixer une image.
+   Utilisé avant toute recherche, avec repli automatique si la page n'a pas d'illustration. */
+const OVRT = {
+"radiant|Astronomie":"Radiant",
+"orbe|Astronomie":"Sphère céleste",
+"combe|Géographie — Vocabulaire":"Combe",
+"cluse|Géographie — Vocabulaire":"Cluse",
+"vacher|Métiers":"Vacher",
+"Ségur|Artistes — Ecrivain":"Comtesse de Ségur",
+"Hunebelle|Artistes — Réalisateur":"André Hunebelle",
+"escopette|Armes":"Escopette (arme à feu)",
+"trigone|Astrologie":"Aspect (astrologie)",
+"bécarre|Musique — Vocabulaire":"Bécarre",
+"roussette|Animaux, faune — Poissons":"Petite roussette",
+"travée|Architecture — Vocabulaire":"Travée",
+"taloche|Outils":"Taloche",
+"cisaille|Outils":"Cisaille",
+"baguier|Meubles, équipement":"Baguier"
+};
+/* Repli Wikimedia Commons pour les mots sans article illustré. */
+const OVRC = {
+"baguier|Meubles, équipement":"baguier coffret à bagues bijou",
+"taloche|Outils":"taloche outil plâtrier truelle",
+"trigone|Astrologie":"trigone aspect astrologique zodiaque",
+"orbe|Astronomie":"sphère armillaire orbe céleste",
+"escopette|Armes":"escopeta arquebuse arme à feu ancienne",
+"cluse|Géographie — Vocabulaire":"cluse relief vallée transversale",
+"combe|Géographie — Vocabulaire":"combe relief jurassien vallée"
+};
+/* Purge ciblée du cache d'images après correction des visuels ci-dessus. */
+const IMGFIX = 'fix-2026-08-11';
+function purgeFixedImages(){
+  if(localStorage.getItem('bam_imgfix') === IMGFIX) return;
+  const mots = new Set(Object.keys(OVRT).concat(Object.keys(OVRC), Object.keys(OVR))
+                 .map(k => k.split('|')[0].toLowerCase()));
+  const kill = [];
+  for(let i=0;i<localStorage.length;i++){
+    const k = localStorage.key(i);
+    if(k && k.startsWith('bam4_') && mots.has(k.slice(5).split('|')[0])) kill.push(k);
+  }
+  kill.forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
+  try{ localStorage.setItem('bam_imgfix', IMGFIX); }catch(e){}
+}
+
 async function findImage(word, ci){
   const cat = DATA.cats[ci];
   const info = catInfo(ci);
   const kws = info.k;
   const multi = DATA.words.some(w=>w.w.toLowerCase()===word.toLowerCase() && w.c.length>1);
 
+  const k1 = word + '|' + cat.l, k2 = word.toLowerCase() + '|' + cat.l;
+  // 0. titre exact imposé
+  const ovt = OVRT[k1] || OVRT[k2];
+  if(ovt){
+    const r = await wikiTitle(ovt);
+    if(r) return r;
+  }
   // 1. requête sur mesure
-  const ovr = OVR[word + '|' + cat.l] || OVR[word.toLowerCase() + '|' + cat.l];
+  const ovr = OVR[k1] || OVR[k2];
   if(ovr){
     const r = await wikiSearch(ovr, kws, word);
+    if(r) return r;
+  }
+  // 1bis. repli Commons imposé (mots sans article illustré)
+  const ovc = OVRC[k1] || OVRC[k2];
+  if(ovc){
+    const r = await commonsSearch(ovc);
     if(r) return r;
   }
   // 2. titre exact « Mot (contexte) »
@@ -1410,6 +1498,7 @@ document.addEventListener('keydown',e=>{
 });
 
 buildCats();
+purgeFixedImages();
 ghLoad();
 </script>
 </body>
