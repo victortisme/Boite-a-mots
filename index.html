@@ -350,7 +350,7 @@ try{
 }catch(e){}
 function purgeImageCache(){
   const kill = [];
-  for(let i=0;i<localStorage.length;i++){ const k = localStorage.key(i); if(k && k.startsWith('bam9_')) kill.push(k); }
+  for(let i=0;i<localStorage.length;i++){ const k = localStorage.key(i); if(k && k.startsWith('bam10_')) kill.push(k); }
   kill.forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
   return kill.length;
 }
@@ -1078,6 +1078,88 @@ const OVR = {
 "pièce|Maison — Pieces":"pièce (architecture)",
 "orbite|Anatomie":"orbite (anatomie)",
 "vasistas|Architecture — Batiments":"vasistas fenêtre",
+"Berlioz|Artistes — Compositeur":"Hector Berlioz",
+"Bizet|Artistes — Compositeur":"Georges Bizet",
+"Brahms|Artistes — Compositeur":"Johannes Brahms",
+"Chopin|Artistes — Compositeur":"Frédéric Chopin",
+"Debussy|Artistes — Compositeur":"Claude Debussy",
+"Haendel|Artistes — Compositeur":"Georg Friedrich Haendel",
+"Haydn|Artistes — Compositeur":"Joseph Haydn",
+"Lully|Artistes — Compositeur":"Jean-Baptiste Lully",
+"Mozart|Artistes — Compositeur":"Wolfgang Amadeus Mozart",
+"Offenbach|Artistes — Compositeur":"Jacques Offenbach",
+"Prokofiev|Artistes — Compositeur":"Sergueï Prokofiev",
+"Puccini|Artistes — Compositeur":"Giacomo Puccini",
+"Ravel|Artistes — Compositeur":"Maurice Ravel",
+"Salieri|Artistes — Compositeur":"Antonio Salieri",
+"Schubert|Artistes — Compositeur":"Franz Schubert",
+"Schumann|Artistes — Compositeur":"Robert Schumann",
+"Torelli|Artistes — Compositeur":"Giuseppe Torelli",
+"Verdi|Artistes — Compositeur":"Giuseppe Verdi",
+"Vivaldi|Artistes — Compositeur":"Antonio Vivaldi",
+"Wagner|Artistes — Compositeur":"Richard Wagner",
+"Anouilh|Artistes — Ecrivain":"Jean Anouilh",
+"Beauvoir|Artistes — Ecrivain":"Simone de Beauvoir",
+"Bellay|Artistes — Ecrivain":"Joachim du Bellay",
+"Camus|Artistes — Ecrivain":"Albert Camus",
+"Cocteau|Artistes — Ecrivain":"Jean Cocteau",
+"Daudet|Artistes — Ecrivain":"Alphonse Daudet",
+"Dumas|Artistes — Ecrivain":"Alexandre Dumas",
+"Flaubert|Artistes — Ecrivain":"Gustave Flaubert",
+"Hugo|Artistes — Ecrivain":"Victor Hugo",
+"Jarry|Artistes — Ecrivain":"Alfred Jarry",
+"Leroux|Artistes — Ecrivain":"Gaston Leroux",
+"Nerval|Artistes — Ecrivain":"Gérard de Nerval",
+"Pagnol|Artistes — Ecrivain":"Marcel Pagnol",
+"Pennac|Artistes — Ecrivain":"Daniel Pennac",
+"Ronsard|Artistes — Ecrivain":"Pierre de Ronsard",
+"Rousseau|Artistes — Ecrivain":"Jean-Jacques Rousseau",
+"Sade|Artistes — Ecrivain":"Marquis de Sade",
+"Sardou|Artistes — Ecrivain":"Victorien Sardou",
+"Sartre|Artistes — Ecrivain":"Jean-Paul Sartre",
+"Stendhal|Artistes — Ecrivain":"Stendhal",
+"Ségur|Artistes — Ecrivain":"Comtesse de Ségur",
+"Verne|Artistes — Ecrivain":"Jules Verne",
+"Zola|Artistes — Ecrivain":"Émile Zola",
+"Bacon|Artistes — Peintre":"Francis Bacon (peintre)",
+"Bosch|Artistes — Peintre":"Jérôme Bosch",
+"braque|Artistes — Peintre":"Georges Braque",
+"Chagall|Artistes — Peintre":"Marc Chagall",
+"Courbet|Artistes — Peintre":"Gustave Courbet",
+"Dali|Artistes — Peintre":"Salvador Dalí",
+"Degas|Artistes — Peintre":"Edgar Degas",
+"Delacroix|Artistes — Peintre":"Eugène Delacroix",
+"Giotto|Artistes — Peintre":"Giotto di Bondone",
+"Goya|Artistes — Peintre":"Francisco de Goya",
+"Géricault|Artistes — Peintre":"Théodore Géricault",
+"Ingres|Artistes — Peintre":"Jean-Auguste-Dominique Ingres",
+"Lotto|Artistes — Peintre":"Lorenzo Lotto",
+"Manet|Artistes — Peintre":"Édouard Manet",
+"Monet|Artistes — Peintre":"Claude Monet",
+"Raphaël|Artistes — Peintre":"Raphaël (peintre)",
+"Rembrandt|Artistes — Peintre":"Rembrandt",
+"Renoir|Artistes — Peintre":"Auguste Renoir",
+"Rubens|Artistes — Peintre":"Pierre Paul Rubens",
+"Sisley|Artistes — Peintre":"Alfred Sisley",
+"Vermeer|Artistes — Peintre":"Johannes Vermeer",
+"Vinci|Artistes — Peintre":"Léonard de Vinci",
+"Allen|Artistes — Réalisateur":"Woody Allen",
+"Almodovar|Artistes — Réalisateur":"Pedro Almodóvar",
+"Becker|Artistes — Réalisateur":"Jacques Becker",
+"Coppola|Artistes — Réalisateur":"Francis Ford Coppola",
+"De Sica|Artistes — Réalisateur":"Vittorio De Sica",
+"Eastwood|Artistes — Réalisateur":"Clint Eastwood",
+"Fleming|Artistes — Réalisateur":"Victor Fleming",
+"Griffith|Artistes — Réalisateur":"David Wark Griffith",
+"Guitry|Artistes — Réalisateur":"Sacha Guitry",
+"Lucas|Artistes — Réalisateur":"George Lucas",
+"Mann|Artistes — Réalisateur":"Anthony Mann",
+"Russell|Artistes — Réalisateur":"Ken Russell",
+"Scorsese|Artistes — Réalisateur":"Martin Scorsese",
+"Spielberg|Artistes — Réalisateur":"Steven Spielberg",
+"Tarantino|Artistes — Réalisateur":"Quentin Tarantino",
+"Tati|Artistes — Réalisateur":"Jacques Tati",
+"Verneuil|Artistes — Réalisateur":"Henri Verneuil",
 "arcade|Anatomie":"arcade sourcilière anatomie",
 "face|Anatomie":"face (anatomie) visage",
 "membre|Anatomie":"membre (anatomie)",
@@ -1314,7 +1396,7 @@ const OVR = {
 "hydravion|Véhicules — Types":"hydravion aéronef",
 "charrue|Véhicules — Types":"charrue agricole labour",
 "carrosse|Véhicules — Types":"carrosse voiture hippomobile",
-"escopette|Armes":"espingole tromblon arme à feu ancienne",
+"escopette|Armes":"title:Tromblon (arme)",
 "tromblon|Armes":"tromblon espingole arme à feu",
 "arum|Flore — Fleurs":"arum plante Araceae fleur",
 "aster|Flore — Fleurs":"aster (plante)",
@@ -1346,7 +1428,6 @@ const OVR = {
 "ganse|Habillement — Couture":"ganse cordonnet passementerie couture",
 "entrelacs|Architecture — Vocabulaire":"entrelacs ornement architecture motif",
 "combe|Géographie — Vocabulaire":"combe vallée relief jurassien",
-"mistigri|Jeux":"mistigri jeu de cartes",
 "rami|Jeux":"rami jeu de cartes",
 "pogne|Nourriture — Desserts":"pogne de Romans brioche",
 "écru|Couleurs":"écru couleur beige naturel tissu",
@@ -1648,7 +1729,7 @@ async function loadImage(item, ci, holder){
     try { res = await findImage(item.w, ci); }
     catch(e){ res = null; }
     imgCache[key] = res;
-    try { localStorage.setItem('bam9_'+key, JSON.stringify(res)); } catch(e){}
+    try { localStorage.setItem('bam10_'+key, JSON.stringify(res)); } catch(e){}
   }
   // holder still on screen?
   const cur = holder;
@@ -1711,7 +1792,7 @@ function purgeFixedImages(){
   const kill = [];
   for(let i=0;i<localStorage.length;i++){
     const k = localStorage.key(i);
-    if(k && k.startsWith('bam9_') && mots.has(k.slice(5).split('|')[0])) kill.push(k);
+    if(k && k.startsWith('bam10_') && mots.has(k.slice(5).split('|')[0])) kill.push(k);
   }
   kill.forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
   try{ localStorage.setItem('bam_imgfix', IMGFIX); }catch(e){}
@@ -1729,6 +1810,21 @@ async function findImage(word, ci){
   if(ovt){
     const r = await wikiTitle(ovt);
     if(r) return r;
+  }
+  const ovr0 = OVR[word + '|' + cat.l] || OVR[word.toLowerCase() + '|' + cat.l];
+  // 0. personnes : page Wikipédia exacte, sinon portrait Commons portant le nom
+  if(info.p){
+    const name = (ovr0 || word).replace(/\s+(réalisateur|cinéaste|metteur en scène|peintre|compositeur|musicien|écrivain|poète|romancier|dramaturge|artiste|photographes?)\b.*$/i, '').trim();
+    const rt = await wikiTitle(name);
+    if(rt) return rt;
+    const rc = await commonsSearch(name, name);
+    if(rc) return rc;
+    return null;
+  }
+  // 0 bis. override « title: » = page Wikipédia imposée
+  if(ovr0 && /^title:/i.test(ovr0)){
+    const rt2 = await wikiTitle(ovr0.slice(6).trim());
+    if(rt2) return rt2;
   }
   // 1. requête sur mesure
   const ovr = OVR[k1] || OVR[k2];
@@ -1853,7 +1949,7 @@ async function loadImageQuery(key, query, holder){
   if(res === undefined){
     try{ res = await findImageQuery(query); }catch(e){ res = null; }
     imgCache[key] = res;
-    try{ localStorage.setItem('bam9_'+key, JSON.stringify(res)); }catch(e){}
+    try{ localStorage.setItem('bam10_'+key, JSON.stringify(res)); }catch(e){}
   }
   if(!holder || !holder.isConnected) return;
   if(res && res.url){
@@ -1882,19 +1978,31 @@ function extraBlocks(item, ci, box, lazy){
     else loadImageQuery(key, e.q, holder);
   });
 }
-async function commonsSearch(q){
+async function commonsSearch(q, prefer){
   const url = 'https://commons.wikimedia.org/w/api.php?action=query&generator=search'
-    + '&gsrsearch=' + encodeURIComponent('filetype:bitmap ' + q) + '&gsrlimit=6&gsrnamespace=6'
+    + '&gsrsearch=' + encodeURIComponent('filetype:bitmap ' + q) + '&gsrlimit=8&gsrnamespace=6'
     + '&prop=imageinfo&iiprop=url&iiurlwidth=560&format=json&origin=*';
   const j = await fetchJson(url);
   const pages = j && j.query && j.query.pages ? Object.values(j.query.pages) : [];
   pages.sort((a,b)=>(a.index||99)-(b.index||99));
-  for(const p of pages){
+  const p0 = prefer ? norm(prefer) : '';
+  let best = null, bk = -Infinity;
+  pages.forEach((p,i)=>{
     const ii = p.imageinfo && p.imageinfo[0];
     const u = ii && (ii.thumburl || ii.url);
-    if(u && !BANNED.test(u)) return { url: u, title: p.title, score: 0 };
-  }
-  return null;
+    if(!u || BANNED.test(u)) return;
+    let k = 0;
+    if(p0){
+      const base = norm(p.title.replace(/^File:/,'').replace(/\.(jpg|jpeg|png|gif|webp|svg)$/i,''));
+      if(base === p0) k = 6;
+      else if(base.startsWith(p0) && base.length < p0.length + 14) k = 4;
+      else if(base.includes(p0)) k = 2;
+      else k = -1;
+    }
+    k -= i*0.1;
+    if(k > bk){ bk = k; best = { url: u, title: p.title, score: 0 }; }
+  });
+  return best;
 }
 
 function fetchJson(url){
@@ -1907,12 +2015,12 @@ function fetchJson(url){
   });
 }
 
-/* préchargement du cache persistant (préfixe bam9_ : l'ancien cache bam_ est ignoré) */
+/* préchargement du cache persistant (préfixe bam10_ : l'ancien cache bam_ est ignoré) */
 (function(){
   try{
     for(let i=0;i<localStorage.length;i++){
       const k = localStorage.key(i);
-      if(k && k.startsWith('bam9_')){
+      if(k && k.startsWith('bam10_')){
         try{ imgCache[k.slice(5)] = JSON.parse(localStorage.getItem(k)); }catch(e){}
       }
     }
