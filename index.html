@@ -276,7 +276,7 @@ select{
     </div>
   </div>
 
-  <p class="foot">Images : Wikipédia / Wikimedia Commons (connexion Internet requise)</p>
+  <p class="foot">Images : Wikipédia · Commons · Wiktionnaire · Openverse</p>
 </div>
 
 <!-- CARD -->
@@ -296,7 +296,7 @@ select{
     <button class="ctrl reveal" id="revealBtn" onclick="revealOrNext()">👁 Révéler</button>
     <button class="ctrl next" id="nextBtn" onclick="nav(1)">Suiv. ▶</button>
   </div>
-  <p class="foot" id="attrib">Images : Wikipédia / Wikimedia Commons</p>
+  <p class="foot" id="attrib">Images : Wikipédia · Commons · Wiktionnaire · Openverse</p>
 </div>
 
 
@@ -350,7 +350,7 @@ try{
 }catch(e){}
 function purgeImageCache(){
   const kill = [];
-  for(let i=0;i<localStorage.length;i++){ const k = localStorage.key(i); if(k && k.startsWith('bam4_')) kill.push(k); }
+  for(let i=0;i<localStorage.length;i++){ const k = localStorage.key(i); if(k && k.startsWith('bam8_')) kill.push(k); }
   kill.forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
   return kill.length;
 }
@@ -754,6 +754,7 @@ function exShow(item, keepSug){
     const div = meaningEl(item, ci);
     box.appendChild(div);
     loadImage(item, ci, div.querySelector('.imgwrap'));
+    extraBlocks(item, ci, box, false);
   });
 }
 function exShowCategory(ci, keepSug){
@@ -783,6 +784,7 @@ function exShowCategory(ci, keepSug){
     main.innerHTML = '<div class="imgwrap"><div class="status">Chargement…</div></div>';
     wrap.appendChild(main);
     lazyLoad(w, ci, main.querySelector('.imgwrap'));
+    extraBlocks(w, ci, wrap, true);
     // autres sens éventuels : catégorie + image
     w.c.filter(wc=>wc!==ci).forEach(wc=>{
       const div = meaningEl(w, wc);
@@ -841,6 +843,7 @@ function render(){
       </div>`;
     box.appendChild(div);
     loadImage(item, ci, div.querySelector('.imgwrap'));
+    extraBlocks(item, ci, box, false);
   });
   const rb = $('revealBtn'), nb = $('nextBtn');
   revealed = false;
@@ -883,10 +886,10 @@ const CATX = {
 "Armée":{k:["militaire","armée","guerre","soldat","unité","grade"],d:"militaire"},
 "Armes":{k:["arme","militaire","combat","guerre","explosif","projectile","artillerie","feu"],d:"arme"},
 "Art — Théâtre":{k:["théâtre","scène","spectacle","dramatique","comédien"],d:"théâtre"},
-"Artistes — Compositeur":{k:["compositeur","musicien"],d:null},
-"Artistes — Ecrivain":{k:["écrivain","poète","romancier","auteur","philosophe","dramaturge"],d:null},
-"Artistes — Peintre":{k:["peintre","peinture","artiste"],d:null},
-"Artistes — Réalisateur":{k:["réalisateur","cinéaste","cinéma","metteur en scène"],d:null},
+"Artistes — Compositeur":{k:["compositeur","musicien"],d:null,p:1},
+"Artistes — Ecrivain":{k:["écrivain","poète","romancier","auteur","philosophe","dramaturge"],d:null,p:1},
+"Artistes — Peintre":{k:["peintre","peinture","artiste"],d:null,p:1},
+"Artistes — Réalisateur":{k:["réalisateur","cinéaste","cinéma","metteur en scène"],d:null,p:1},
 "Astrologie":{k:["astrologie","zodiaque","astrologique","divination","signe"],d:"astrologie"},
 "Astronomie":{k:["astronomie","astre","céleste","espace","étoile","orbite","astronomique"],d:"astronomie"},
 "Astronomie — Planète":{k:["planète","satellite","lune","étoile","système solaire","astre"],d:"planète"},
@@ -965,7 +968,7 @@ const OVR = {
 "bar|Animaux, faune — Poissons":"bar (poisson)",
 "perche|Animaux, faune — Poissons":"perche (poisson)",
 "mulet|Animaux, faune — Poissons":"mulet (poisson)",
-"roussette|Animaux, faune — Poissons":"roussette (poisson)",
+"roussette|Animaux, faune — Poissons":"petite roussette Scyliorhinus canicula requin",
 "lieu|Nourriture — Poissons":"lieu (poisson)",
 "sole|Nourriture — Poissons":"sole (poisson)",
 "lotte|Nourriture — Poissons":"lotte poisson baudroie",
@@ -1075,6 +1078,148 @@ const OVR = {
 "pièce|Maison — Pieces":"pièce (architecture)",
 "orbite|Anatomie":"orbite (anatomie)",
 "vasistas|Architecture — Batiments":"vasistas fenêtre",
+"escopette|Armes":"espingole tromblon arme à feu ancienne",
+"tromblon|Armes":"tromblon espingole arme à feu",
+"arum|Flore — Fleurs":"arum plante Araceae fleur",
+"aster|Flore — Fleurs":"aster (plante)",
+"capucine|Flore — Fleurs":"capucine (plante) Tropaeolum",
+"colchique|Flore — Fleurs":"colchique d'automne plante",
+"liseron|Flore — Fleurs":"liseron plante Convolvulus",
+"sauge|Flore — Fleurs":"sauge plante Salvia",
+"bette|Flore — Légumes":"bette blette poirée légume",
+"grenadier|Flore — Arbres":"grenadier arbre Punica granatum",
+"teck|Flore — Arbres":"teck arbre Tectona grandis",
+"avocette|Animaux, faune — Oiseaux":"Recurvirostra avosetta avocette élégante",
+"bruant|Animaux, faune — Oiseaux":"bruant oiseau passereau Emberiza",
+"grive|Animaux, faune — Oiseaux":"grive oiseau Turdus",
+"sansonnet|Animaux, faune — Oiseaux":"étourneau sansonnet oiseau",
+"vanneau|Animaux, faune — Oiseaux":"vanneau huppé oiseau",
+"congre|Animaux, faune — Poissons":"congre poisson anguilliforme",
+"flétan|Animaux, faune — Poissons":"flétan poisson plat",
+"épinoche|Nourriture — Poissons":"épinoche poisson",
+"nèpe|Insectes":"nèpe cendrée scorpion d'eau punaise aquatique",
+"sirex|Insectes":"sirex géant hyménoptère insecte",
+"bielle|Véhicules — Auto":"bielle (mécanique) moteur",
+"culbuteur|Véhicules — Auto":"culbuteur moteur soupape mécanique",
+"lanterne|Véhicules — Auto":"feu de position lanterne automobile",
+"bécarre|Musique — Vocabulaire":"bécarre altération musique solfège",
+"comma|Musique — Vocabulaire":"comma intervalle musical",
+"hélicon|Musique — Instruments":"hélicon instrument cuivre tuba",
+"cornette|Habillement — Chapeaux":"cornette coiffe religieuse",
+"cothurne|Habillement — Chaussures":"cothurne chaussure théâtre antique",
+"ganse|Habillement — Couture":"ganse cordonnet passementerie couture",
+"entrelacs|Architecture — Vocabulaire":"entrelacs ornement architecture motif",
+"combe|Géographie — Vocabulaire":"combe vallée relief jurassien",
+"mistigri|Jeux":"mistigri jeu de cartes",
+"rami|Jeux":"rami jeu de cartes",
+"pogne|Nourriture — Desserts":"pogne de Romans brioche",
+"écru|Couleurs":"écru couleur beige naturel tissu",
+"éperon|Equitation":"éperon (équitation) cavalier",
+"Bartok|Artistes — Compositeur":"Béla Bartók compositeur",
+"Gounod|Artistes — Compositeur":"Charles Gounod compositeur",
+"Massenet|Artistes — Compositeur":"Jules Massenet compositeur",
+"Becher|Artistes — Peintre":"Bernd et Hilla Becher photographes",
+"Bruegel|Artistes — Peintre":"Pieter Bruegel l'Ancien peintre",
+"Duchamp|Artistes — Peintre":"Marcel Duchamp artiste",
+"Dufy|Artistes — Peintre":"Raoul Dufy peintre",
+"Ribera|Artistes — Peintre":"José de Ribera peintre",
+"Turner|Artistes — Peintre":"William Turner peintre",
+"Loti|Artistes — Ecrivain":"Pierre Loti écrivain",
+"Queneau|Artistes — Ecrivain":"Raymond Queneau écrivain",
+"Villon|Artistes — Ecrivain":"François Villon poète",
+"Annaud|Artistes — Réalisateur":"Jean-Jacques Annaud réalisateur",
+"Bertolucci|Artistes — Réalisateur":"Bernardo Bertolucci réalisateur",
+"Hunebelle|Artistes — Réalisateur":"André Hunebelle réalisateur",
+"Losey|Artistes — Réalisateur":"Joseph Losey réalisateur",
+"Mankiewicz|Artistes — Réalisateur":"Joseph L. Mankiewicz réalisateur",
+"Molinaro|Artistes — Réalisateur":"Édouard Molinaro réalisateur",
+"Ophuls|Artistes — Réalisateur":"Max Ophüls réalisateur",
+"Pasolini|Artistes — Réalisateur":"Pier Paolo Pasolini réalisateur",
+"Sternberg|Artistes — Réalisateur":"Josef von Sternberg réalisateur",
+"Vidor|Artistes — Réalisateur":"King Vidor réalisateur",
+"Visconti|Artistes — Réalisateur":"Luchino Visconti réalisateur",
+"Walsh|Artistes — Réalisateur":"Raoul Walsh réalisateur",
+"Wilder|Artistes — Réalisateur":"Billy Wilder réalisateur",
+"taloche|Outils":"taloche truelle plâtrier maçon",
+"grattoir|Outils":"grattoir (outil)",
+"chignole|Outils":"chignole perceuse à main vilebrequin",
+"lime|Outils":"lime (outil)",
+"vrille|Outils":"vrille (outil) foret",
+"meule|Outils":"meule abrasive affûtage",
+"pince|Outils":"pince (outil)",
+"cheville|Outils":"cheville (fixation) mur",
+"vis|Outils":"vis (mécanique)",
+"clou|Outils":"clou (fixation)",
+"maillet|Outils":"maillet (outil)",
+"burin|Outils":"burin (outil)",
+"étau|Outils":"étau (outil)",
+"établi|Outils":"établi (meuble) atelier menuisier",
+"établi|Meubles, équipement":"établi (meuble) atelier menuisier",
+"cisaille|Outils":"cisaille (outil)",
+"tenaille|Outils":"tenaille (outil)",
+"poinçon|Outils":"poinçon (outil)",
+"cutter|Outils":"cutter couteau à lame rétractable",
+"rivet|Outils":"rivet assemblage",
+"ponceuse|Outils":"ponceuse électroportatif",
+"perceuse|Outils":"perceuse électroportatif",
+"coupe|Habillement — Couture":"coupe (couture) patronage",
+"découpe|Habillement — Couture":"découpe couture vêtement",
+"bâti|Habillement — Couture":"bâti (couture) faufilage",
+"maille|Habillement — Couture":"maille (textile) tricot",
+"chas|Habillement — Couture":"chas aiguille couture",
+"cannette|Habillement — Couture":"canette machine à coudre fil",
+"biais|Habillement — Couture":"biais (couture) ruban",
+"pli|Habillement — Couture":"pli (couture) tissu",
+"cordon|Habillement — Couture":"cordon (textile) lacet",
+"pelote|Habillement — Couture":"pelote de laine fil",
+"bobine|Habillement — Couture":"bobine de fil couture",
+"agrafe|Habillement — Couture":"agrafe (couture) fermeture vêtement",
+"aiguille|Habillement — Couture":"aiguille à coudre",
+"épingle|Habillement — Couture":"épingle couture",
+"banc|Meubles, équipement":"banc (siège)",
+"table|Meubles, équipement":"table (meuble)",
+"horloge|Meubles, équipement":"horloge comtoise meuble",
+"liseuse|Meubles, équipement":"liseuse fauteuil meuble",
+"pupitre|Meubles, équipement":"pupitre (meuble)",
+"dressoir|Meubles, équipement":"dressoir buffet meuble",
+"baguier|Meubles, équipement":"baguier coffret à bagues",
+"pétrin|Meubles, équipement":"pétrin (meuble) boulangerie",
+"escabeau|Meubles, équipement":"escabeau échelle",
+"transat|Meubles, équipement":"chaise longue transat",
+"trépied|Meubles, équipement":"trépied (support)",
+"vitrine|Meubles, équipement":"vitrine (meuble)",
+"dos-d'âne|Meubles, équipement":"bureau dos d'âne secrétaire meuble",
+"comptoir|Meubles, équipement":"comptoir (mobilier)",
+"sofa|Meubles, équipement":"sofa canapé meuble",
+"bidet|Meubles, équipement":"bidet (sanitaire)",
+"couvert|Ustensiles":"couverts de table fourchette couteau cuillère",
+"cuillère|Ustensiles":"cuillère ustensile",
+"couteau|Ustensiles":"couteau de cuisine",
+"faitout|Ustensiles":"faitout marmite cuisine",
+"marmite|Ustensiles":"marmite (récipient)",
+"coupelle|Ustensiles":"coupelle petit récipient",
+"couvercle|Ustensiles":"couvercle récipient",
+"bouchon|Ustensiles":"bouchon (bouteille) liège",
+"spatule|Ustensiles":"spatule (ustensile)",
+"verre|Ustensiles":"verre (récipient)",
+"arche|Architecture — Vocabulaire":"arche (architecture) voûte",
+"arête|Architecture — Vocabulaire":"arête voûte architecture",
+"boulin|Architecture — Vocabulaire":"boulin échafaudage maçonnerie",
+"comble|Architecture — Vocabulaire":"comble (architecture) charpente",
+"galerie|Architecture — Vocabulaire":"galerie (architecture)",
+"pavillon|Architecture — Vocabulaire":"pavillon (architecture)",
+"travée|Architecture — Vocabulaire":"travée (architecture)",
+"courtine|Architecture — Vocabulaire":"courtine (fortification) muraille",
+"embrasure|Architecture — Vocabulaire":"embrasure (architecture) fenêtre",
+"moulure|Architecture — Vocabulaire":"moulure (architecture) ornement",
+"colonne|Architecture — Vocabulaire":"colonne (architecture)",
+"jade|Géologie, roches, pierres":"jade (roche) minéral",
+"turquoise|Géologie, roches, pierres":"turquoise (minéral)",
+"lapis|Géologie, roches, pierres":"lapis-lazuli pierre",
+"glaise|Géologie, roches, pierres":"argile glaise terre",
+"silice|Géologie, roches, pierres":"silice dioxyde de silicium minéral",
+"grès|Géologie, roches, pierres":"grès (roche)",
+"mica|Géologie, roches, pierres":"mica (minéral)",
 "kroumir|Habillement — Chaussures":"chausson babouche cuir pantoufle",
 "brodequin|Habillement — Chaussures":"brodequin chaussure montante",
 "mocassin|Habillement — Chaussures":"mocassin (chaussure)",
@@ -1267,7 +1412,7 @@ async function loadImage(item, ci, holder){
     try { res = await findImage(item.w, ci); }
     catch(e){ res = null; }
     imgCache[key] = res;
-    try { localStorage.setItem('bam4_'+key, JSON.stringify(res)); } catch(e){}
+    try { localStorage.setItem('bam8_'+key, JSON.stringify(res)); } catch(e){}
   }
   // holder still on screen?
   const cur = holder;
@@ -1330,7 +1475,7 @@ function purgeFixedImages(){
   const kill = [];
   for(let i=0;i<localStorage.length;i++){
     const k = localStorage.key(i);
-    if(k && k.startsWith('bam4_') && mots.has(k.slice(5).split('|')[0])) kill.push(k);
+    if(k && k.startsWith('bam8_') && mots.has(k.slice(5).split('|')[0])) kill.push(k);
   }
   kill.forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
   try{ localStorage.setItem('bam_imgfix', IMGFIX); }catch(e){}
@@ -1372,10 +1517,21 @@ async function findImage(word, ci){
   // 4. recherche du mot seul, mêmes exigences
   const r2 = await wikiSearch(word, kws, word);
   if(r2 && r2.wm && r2.score > 0) return r2;
-  // 5. pas de page validée : Commons avec contexte de catégorie AVANT toute page hors sujet
-  const rc = await commonsSearch(word + ' ' + (info.d || cat.h.split(' ')[0]));
+  // 5. personnes : uniquement portraits Wikipédia/Commons, jamais de repli générique
+  if(info.p){
+    const rp = await commonsSearch((ovr || (word + ' ' + cat.h)));
+    if(rp) return rp;
+    if(r1 && r1.wm) return r1;
+    if(r2 && r2.wm) return r2;
+    return null;
+  }
+  const ctx = info.d || cat.h.split(' ')[0];
+  const rc = await commonsSearch(word + ' ' + ctx);
   if(rc) return rc;
-  // 6. dernier recours : meilleur résultat même sans validation (mot dans le titre d'abord)
+  const rw = await wiktImage(word);
+  if(rw) return rw;
+  const ro = await openverseSearch(word + ' ' + (ovr ? '' : ctx));
+  if(ro) return ro;
   if(r1 && r1.wm) return r1;
   if(r2 && r2.wm) return r2;
   return r1 || r2 || null;
@@ -1417,6 +1573,79 @@ async function wikiSearch(q, kws, word){
   return best;
 }
 
+async function wiktImage(word){
+  try{
+    const url = 'https://fr.wiktionary.org/w/api.php?action=query&redirects=1'
+      + '&titles=' + encodeURIComponent(word.toLowerCase())
+      + '&prop=pageimages&piprop=thumbnail&pithumbsize=560&format=json&origin=*';
+    const j = await fetchJson(url);
+    const pages = j && j.query && j.query.pages ? Object.values(j.query.pages) : [];
+    for(const p of pages){
+      if(p.missing === undefined && p.thumbnail && p.thumbnail.source && !BANNED.test(p.thumbnail.source)){
+        return { url: p.thumbnail.source, title: p.title, score: 0 };
+      }
+    }
+  }catch(e){}
+  return null;
+}
+async function openverseSearch(q){
+  try{
+    const url = 'https://api.openverse.org/v1/images/?format=json&page_size=8&mature=false&q=' + encodeURIComponent(q);
+    const j = await fetchJson(url);
+    const res = (j && j.results) || [];
+    for(const p of res){
+      const u = p.thumbnail || p.url;
+      if(u && !BANNED.test(u)) return { url: u, title: p.title || q, score: 0 };
+    }
+  }catch(e){}
+  return null;
+}
+const EXTRA = {
+"gondole|Meubles, équipement":[{l:"Gondole de magasin (présentoir)",q:"gondole présentoir magasin rayonnage"}]
+};
+async function findImageQuery(q){
+  let r = await wikiSearch(q, [], null);
+  if(r && r.wm) return r;
+  const rc = await commonsSearch(q);
+  if(rc) return rc;
+  const ro = await openverseSearch(q);
+  if(ro) return ro;
+  return r || null;
+}
+async function loadImageQuery(key, query, holder){
+  let res = imgCache[key];
+  if(res === undefined){
+    try{ res = await findImageQuery(query); }catch(e){ res = null; }
+    imgCache[key] = res;
+    try{ localStorage.setItem('bam8_'+key, JSON.stringify(res)); }catch(e){}
+  }
+  if(!holder || !holder.isConnected) return;
+  if(res && res.url){
+    holder.querySelector('.status')?.remove();
+    const img = new Image();
+    img.referrerPolicy = 'no-referrer';
+    img.onerror = ()=>{ const s=document.createElement('div'); s.className='status'; s.textContent='Image indisponible'; holder.prepend(s); img.remove(); };
+    img.src = res.url;
+    holder.prepend(img);
+  } else {
+    const s = holder.querySelector('.status');
+    if(s) s.textContent = 'Aucune image trouvée';
+  }
+}
+function extraBlocks(item, ci, box, lazy){
+  const list = EXTRA[item.w + '|' + DATA.cats[ci].l] || EXTRA[item.w.toLowerCase() + '|' + DATA.cats[ci].l];
+  if(!list) return;
+  list.forEach((e, n)=>{
+    const div = document.createElement('div');
+    div.className = 'meaning';
+    div.innerHTML = '<div class="catlab" style="background:' + catColor(ci) + '">' + escapeHtml(e.l) + '</div>' + '<div class="imgwrap"><div class="status">Chargement…</div></div>';
+    box.appendChild(div);
+    const holder = div.querySelector('.imgwrap');
+    const key = item.w.toLowerCase() + '|x' + ci + '_' + n;
+    if(lazy && typeof lazyObs !== 'undefined' && lazyObs){ pendingLazy.set(holder, ()=>loadImageQuery(key, e.q, holder)); lazyObs.observe(holder); }
+    else loadImageQuery(key, e.q, holder);
+  });
+}
 async function commonsSearch(q){
   const url = 'https://commons.wikimedia.org/w/api.php?action=query&generator=search'
     + '&gsrsearch=' + encodeURIComponent('filetype:bitmap ' + q) + '&gsrlimit=6&gsrnamespace=6'
@@ -1442,12 +1671,12 @@ function fetchJson(url){
   });
 }
 
-/* préchargement du cache persistant (préfixe bam4_ : l'ancien cache bam_ est ignoré) */
+/* préchargement du cache persistant (préfixe bam8_ : l'ancien cache bam_ est ignoré) */
 (function(){
   try{
     for(let i=0;i<localStorage.length;i++){
       const k = localStorage.key(i);
-      if(k && k.startsWith('bam4_')){
+      if(k && k.startsWith('bam8_')){
         try{ imgCache[k.slice(5)] = JSON.parse(localStorage.getItem(k)); }catch(e){}
       }
     }
