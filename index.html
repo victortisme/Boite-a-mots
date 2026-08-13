@@ -336,8 +336,8 @@ function setPool(p){
   document.querySelectorAll('#poolpanel .chip').forEach(c=>c.classList.toggle('on', c.dataset.p===p));
 }
 
-/* mots classés « difficile » lors du premier classement complet */
-const PASSE = new Set(["annaud","arum","arête","aster","avocette","barbet","bartok","becher","bergère","bertolucci","bette","bielle","bruant","bruegel","bécarre","capucine","chignole","colchique","combe","comma","congre","cornet","cornette","cothurne","culbuteur","dos-d'âne","duchamp","dufy","entrelacs","escopette","flétan","ganse","gondole","gounod","grenadier","grive","hunebelle","hélicon","lanterne","liseron","losey","loti","mankiewicz","martinet","massenet","mistigri","moka","molinaro","nèpe","ophuls","pasolini","pogne","pétrin","queneau","rami","ribera","roussette","sansonnet","sauge","serin","sirex","sternberg","teck","tromblon","turner","vanneau","vidor","villon","visconti","walsh","wilder","écru","éperon","épinoche","taloche"]);
+/* mots classés « difficile » au premier classement complet — 10 août 2026 */
+const PASSE = new Set(["adagio","adonis","agate","aiguillée","aile","airelle","ajonc","ajusteur","albâtre","alexandra","alluvion","almodovar","alto","amaryllis","améthyste","ancolie","andésite","anisade","annales","annaud","année","anouilh","anémone","aparté","argentier","aria","armagnac","armateur","arpège","arum","arête","aster","astreinte","astrolabe","astronef","auburn","aubépine","aulne","avocatier","avocette","azalée","azimut","aérogare","baba","babouche","bacon","baguette","baguier","baie","baliste","barbet","bartok","base","basset","bauxite","bayou","becher","bellay","bergère","berlioz","bertolucci","bette","bicorne","bielle","bistre","bizet","bizut","blockhaus","bobtail","bogue","bombyx","boogie","bottillon","bouffon","boulin","brahms","brodequin","bruant","bruegel","bécarre","caban","calandre","calcite","callisto","camélia","cancrelat","canevas","canotier","cap","capeline","capucine","causse","chagall","charançon","chas","chevalière","chignole","choreute","chorus","chow-chow","cisaille","cithare","clafoutis","classe","clocheton","cluse","colchique","colley","combe","comma","congre","coppola","cornet","cornette","corridor","corsage","cothurne","cour","courbet","courtine","crachin","crottin","crécelle","crédulité","culasse","culbuteur","dague","dahu","dali","dattier","daudet","de sica","diorite","diva","dogue","dos-d'âne","douve","dressoir","duchamp","dufy","durite","dytique","décagone","décan","décision","décoction","décours","efis","embrun","entrelacs","entremets","erg","escopette","esturgeon","externat","fandango","fanfrelon","farfadet","faucheux","faufil","fauvette","feston","flétan","fourme","fraisier","freesia","freetown","fuchsia","gange","ganse","ganymède","genet","gibbon","gibus","giotto","giroflée","gondole","goujon","gounod","gourmette","grattoir","graveur","gravité","grenadier","griffon","grive","grésil","guitry","guêtre","géomancie","géricault","haendel","haie","halo","hanneton","harmonium","haydn","hulotte","hunebelle","hydravion","hydromel","hélicon","igloo","incrément","ingres","jacinthe","jaspe","jodhpur","jujube","kabbale","kazakh","kendo","kigali","korrigan","kroumir","kéfir","langueur","lanterne","lapis","lapis-lazuli","lazurite","lignage","limbe","limon","limpopo","liseron","liseuse","livarot","loriot","losey","loti","lully","lunaison","lupin","luth","macareux","maillet","malachite","malamute","mambo","mankiewicz","marche","mars","martinet","massenet","mastiff","meccano","menu","menuet","milan","minitel","mistigri","moka","molinaro","moskva","moulure","mousquet","moyeu","muscat","mygale","mékong","mélodica","mémoire","métreur","nadir","navarin","naïade","nerval","niamey","nèfle","nèpe","ocelot","octet","offenbach","onagre","onyx","ophuls","opossum","orbe","origine","ormeau","ouvreur","ouzbek","pagnol","paroi","paso","pasolini","paupiette","pennac","perdreau","pervenche","petit-duc","pilastre","pinacle","piquet","pogne","pointer","poinçon","polder","portance","poulaine","praline","pressurisation","psyché","puccini","pulsar","pupitre","pâtisson","péridot","périgée","pétrin","quadrille","queneau","quito","radiant","rami","rangoon","ratafia","renvoi","ribera","rivet","roncier","rondache","rondeau","ronsard","rosace","rotonde","roussette","ryanair","récitant","réservoir","sacrifice","sagaie","salieri","salpêtre","salsifis","sansonnet","sardane","sardou","sarisse","satyre","sauge","sautoir","sauvageon","savate","saynète","scorsese","serin","setter","sinusoïde","sirex","sisley","solitaire","souffleur","starter","sternberg","stéradian","surfil","surpiqure","sycomore","sylphe","sécante","sédiment","ségur","taloche","taon","tapir","tapissier","taureau","teck","teigne","thuya","tilleul","tipule","tirade","torelli","travée","tricorne","trigone","triton","trolley","tromblon","trébuchet","trémolo","turner","typhoïde","vacher","vanneau","vanuatu","vasistas","vermeer","verveine","veuvage","vibrato","vidor","villon","visconti","viscère","vivaldi","walsh","weser","wicca","wilder","zambèze","zinnia","zircon","échassier","écru","édam","églantine","éperon","épieu","épinoche","établi"]);
 function isPasse(w){ return PASSE.has(w.toLowerCase()); }
 /* ---------- difficulté des mots : ND (par défaut) / facile / difficile ---------- */
 let diffMap = {};
@@ -358,7 +358,7 @@ try{
 }catch(e){}
 function purgeImageCache(){
   const kill = [];
-  for(let i=0;i<localStorage.length;i++){ const k = localStorage.key(i); if(k && k.startsWith('bam11_')) kill.push(k); }
+  for(let i=0;i<localStorage.length;i++){ const k = localStorage.key(i); if(k && k.startsWith('bam12_')) kill.push(k); }
   kill.forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
   return kill.length;
 }
@@ -1738,7 +1738,7 @@ async function loadImage(item, ci, holder){
     try { res = await findImage(item.w, ci); }
     catch(e){ res = null; }
     imgCache[key] = res;
-    try { localStorage.setItem('bam11_'+key, JSON.stringify(res)); } catch(e){}
+    try { localStorage.setItem('bam12_'+key, JSON.stringify(res)); } catch(e){}
   }
   // holder still on screen?
   const cur = holder;
@@ -1801,7 +1801,7 @@ function purgeFixedImages(){
   const kill = [];
   for(let i=0;i<localStorage.length;i++){
     const k = localStorage.key(i);
-    if(k && k.startsWith('bam11_') && mots.has(k.slice(5).split('|')[0])) kill.push(k);
+    if(k && k.startsWith('bam12_') && mots.has(k.slice(5).split('|')[0])) kill.push(k);
   }
   kill.forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
   try{ localStorage.setItem('bam_imgfix', IMGFIX); }catch(e){}
@@ -1958,7 +1958,7 @@ async function loadImageQuery(key, query, holder){
   if(res === undefined){
     try{ res = await findImageQuery(query); }catch(e){ res = null; }
     imgCache[key] = res;
-    try{ localStorage.setItem('bam11_'+key, JSON.stringify(res)); }catch(e){}
+    try{ localStorage.setItem('bam12_'+key, JSON.stringify(res)); }catch(e){}
   }
   if(!holder || !holder.isConnected) return;
   if(res && res.url){
@@ -2024,12 +2024,12 @@ function fetchJson(url){
   });
 }
 
-/* préchargement du cache persistant (préfixe bam11_ : l'ancien cache bam_ est ignoré) */
+/* préchargement du cache persistant (préfixe bam12_ : l'ancien cache bam_ est ignoré) */
 (function(){
   try{
     for(let i=0;i<localStorage.length;i++){
       const k = localStorage.key(i);
-      if(k && k.startsWith('bam11_')){
+      if(k && k.startsWith('bam12_')){
         try{ imgCache[k.slice(5)] = JSON.parse(localStorage.getItem(k)); }catch(e){}
       }
     }
